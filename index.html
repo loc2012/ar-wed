@@ -2,43 +2,150 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Split Screen</title>
+    <title>AR VR Custom Video Player</title>
+    
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
     <style>
-        body { margin: 0; overflow: hidden; }
-        /* Tự chia đôi màn hình thủ công */
-        .split {
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            font-family: sans-serif;
+        }
+
+        /* Khung chứa 2 mắt VR */
+        .vr-container {
             display: flex;
             width: 100vw;
             height: 100vh;
         }
-        .view {
-            width: 50%;
-            height: 100%;
-            overflow: hidden;
+
+        .eye-view {
+            width: 50vw;
+            height: 100vh;
             position: relative;
+            overflow: hidden;
+            border-right: 1px solid #222;
+            box-sizing: border-box;
+        }
+
+        a-scene {
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+        }
+
+        /* Nút điều khiển đè lên trên màn hình */
+        #control-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 15px;
+            border-radius: 30px;
+            border: 1px solid #00ffcc;
+        }
+
+        .btn {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Ẩn ô chọn file mặc định */
+        #video-input {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="split">
-        <div class="view">
-            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: no;">
+
+    <!-- Thanh điều khiển tải Video -->
+    <div id="control-panel">
+        <button class="btn" onclick="document.getElementById('video-input').click()">📂 Chọn Video</button>
+        <button class="btn" id="play-btn">▶️ Bật Tiếng/Phát</button>
+        <input type="file" id="video-input" accept="video/mp4,video/*">
+    </div>
+
+    <!-- Video lưu trong bộ nhớ -->
+    <div style="display: none;">
+        <video id="my-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+    </div>
+
+    <div class="vr-container">
+        <!-- MẮT TRÁI -->
+        <div class="eye-view">
+            <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+                     embedded color-space="sRGB" renderer="precision: low; antialias: false;" vr-mode-ui="enabled: false">
                 <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-                <a-entity mindar-image-target="targetIndex: 0">
-                    <a-box color="red" scale="0.2 0.2 0.2" position="0 0 0"></a-box>
+                <a-entity mindar-image-target="targetIndex: 0" class="ar-target">
+                    <a-box position="0 0 -0.01" scale="1.05 0.6 0.02" material="color: #00ffcc; wireframe: true"></a-box>
+                    <a-video src="#my-video" width="1" height="0.5625" position="0 0 0.02"></a-video>
                 </a-entity>
             </a-scene>
         </div>
-        <div class="view">
-            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: no;">
+
+        <!-- MẮT PHẢI -->
+        <div class="eye-view">
+            <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+                     embedded color-space="sRGB" renderer="precision: low; antialias: false;" vr-mode-ui="enabled: false">
                 <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-                <a-entity mindar-image-target="targetIndex: 0">
-                    <a-box color="red" scale="0.2 0.2 0.2" position="0 0 0"></a-box>
+                <a-entity mindar-image-target="targetIndex: 0" class="ar-target">
+                    <a-box position="0 0 -0.01" scale="1.05 0.6 0.02" material="color: #00ffcc; wireframe: true"></a-box>
+                    <a-video src="#my-video" width="1" height="0.5625" position="0 0 0.02"></a-video>
                 </a-entity>
             </a-scene>
         </div>
     </div>
+
+    <script>
+        const video = document.querySelector('#my-video');
+        const videoInput = document.querySelector('#video-input');
+        const playBtn = document.querySelector('#play-btn');
+        const targets = document.querySelectorAll('.ar-target');
+
+        // Xử lý khi chọn file từ máy
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                video.src = fileURL;
+                video.load();
+                video.play();
+                playBtn.innerText = "🔊 Đang Phát";
+            }
+        });
+
+        // Nút bấm kích hoạt âm thanh (tránh bị trình duyệt chặn)
+        playBtn.addEventListener('click', () => {
+            video.muted = false;
+            video.play();
+            playBtn.innerText = "🔊 Đang Bật Tiếng";
+        });
+
+        // Tự động Play/Pause khi soi vào mô hình carton
+        targets.forEach(target => {
+            target.addEventListener("targetFound", () => {
+                if (video.src) video.play();
+            });
+            target.addEventListener("targetLost", () => {
+                if (video.src) video.pause();
+            });
+        });
+    </script>
 </body>
 </html>
