@@ -1,59 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>AR Theo Đốc Hình Vẽ Mẫu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>VR AR - Chia Đôi Màn Hình</title>
     
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <!-- Thư viện A-Frame (Bản mới ổn định cho VR) -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- Thư viện MindAR Image (Bản mới nhất) -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; }
-        #instruction {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00ffcc;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-family: sans-serif;
-            border: 1px solid #00ffcc;
-            text-align: center;
-            font-size: 14px;
-        }
+        body { margin: 0; overflow: hidden; background-color: black; }
+        
+        /* Ẩn dòng thông báo chuẩn, vì khi chia đôi màn hình nó sẽ bị lệch */
+        .mindar-ui-scanning { display: none !important; }
+        .mindar-ui-loading { display: none !important; }
+
+        /* Nút ẩn VR mặc định của A-Frame sẽ được kích hoạt tự động */
+        .a-enter-vr { display: block !important; position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
     </style>
 </head>
 <body>
 
-    <div id="instruction">📸 Rọi camera vào hình vẽ trong tập...</div>
-
+    <!-- 
+        Cấu hình a-scene:
+        - mindar-image: Load targets.mind, autoStart (tự chạy), interfaceLoading: false (ẩn load)
+        - vr-mode-ui: enabled: true (cho phép hiện nút VR)
+        - embedded: Giúp render gọn vào nền web
+    -->
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiError: no;" 
-        color-space="sRGB" 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; interfaceLoading: false; uiScanning: no;" 
         embedded
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false">
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights, alpha: true" 
+        vr-mode-ui="enabled: true"
+        device-orientation-permission-ui="enabled: true">
         
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <!-- 
+            Cấu hình Camera cho VR Stereoscopic (Chia đôi):
+            - Phải đặt camera làm con của một entity để điều khiển vị trí mắt.
+            - Phải thêm thuộc tính stereocam cho camera.
+        -->
+        <a-entity id="cameraRig">
+            <a-camera 
+                position="0 0 0" 
+                look-controls="enabled: true" 
+                stereocam="eye: left">
+            </a-camera>
+        </a-camera>
 
+        <!-- Nền trong suốt để hiện video camera sau -->
+        <a-sky material="transparent: true; opacity: 0"></a-sky>
+
+        <!-- 
+            Entity chứa các vật thể AR (Chỉ hiện khi nhận diện được hình) 
+            targetIndex: 0 (Hình đầu tiên trong targets.mind)
+        -->
         <a-entity mindar-image-target="targetIndex: 0">
-            <!-- Vòng tròn đỏ ở giữa -->
-            <a-circle color="red" radius="0.15" position="0 0 0.05"></a-circle>
-            
-            <!-- 4 khối cầu màu ở 4 góc -->
-            <a-sphere color="yellow" radius="0.08" position="-0.3 0.3 0.1"></a-sphere>
-            <a-sphere color="cyan" radius="0.08" position="0.3 0.3 0.1"></a-sphere>
-            <a-sphere color="magenta" radius="0.08" position="-0.3 -0.3 0.1"></a-sphere>
-            <a-sphere color="green" radius="0.08" position="0.3 -0.3 0.1"></a-sphere>
-            
-            <!-- Hình lập phương quay ở tâm -->
-            <a-box position="0 0 0.25" material="color: #4CC3D9; wireframe: true" scale="0.3 0.3 0.3"
-                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+            <!-- 
+                Vật thể 3D mẫu: Khối lập phương dây màu xanh quay tròn
+                Scale nhỏ lại một chút để dễ nhìn trong VR
+            -->
+            <a-box 
+                position="0 0 0.15" 
+                material="color: #4CC3D9; wireframe: true" 
+                scale="0.2 0.2 0.2"
+                animation="property: rotation; to: 0 360 360; loop: true; dur: 5000; easing: linear">
             </a-box>
+            
+            <!-- Thêm một vòng tròn đỏ ở tâm làm mốc -->
+            <a-circle color="red" radius="0.1" position="0 0 0.01"></a-circle>
         </a-entity>
 
     </a-scene>
