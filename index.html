@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Video VR Box</title>
+    <title>Web AR Xem Phim Máy Tính</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -11,114 +11,66 @@
         html, body {
             margin: 0;
             padding: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #000;
-            font-family: sans-serif;
         }
 
-        /* Thanh công cụ chọn file cố định phía trên */
-        #ui-container {
-            position: fixed;
-            top: 10px;
+        #instruction {
+            position: absolute;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 999999;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 8px 15px;
-            border-radius: 25px;
-            border: 2px solid #00ffcc;
-            display: flex;
-            gap: 10px;
-            box-shadow: 0 0 10px #00ffcc;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ffcc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: sans-serif;
+            border: 1px solid #00ffcc;
+            text-align: center;
+            font-size: 13px;
         }
-
-        .btn {
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="ui-container">
-        <button class="btn" onclick="document.getElementById('file-input').click()">📂 1. Chọn Video MP4</button>
-        <button class="btn" id="play-btn">▶️ 2. Mở Xem Phim</button>
-        <input type="file" id="file-input" accept="video/mp4,video/*">
-    </div>
+    <div id="instruction">📸 Rọi camera vào máy tính carton...</div>
 
-    <!-- Khai báo thẻ video chuẩn AR -->
+    <!-- Tải trước file video nằm trên GitHub cùng thư mục -->
     <a-assets>
-        <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        <video id="ar-video" src="./video.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
     </a-assets>
 
+    <!-- Khung AR chuẩn ban đầu của bạn (chuẩn 100% không lo đen màn) -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="precision: low; antialias: false; colorManagement: true;" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            <!-- Tấm nền màn hình video 3D -->
+            <!-- Thay khối vuông bằng tấm nền video tỉ lệ 16:9 gắn vừa khít mặt máy tính -->
             <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
         </a-entity>
 
     </a-scene>
 
     <script>
+        // Tự động phát video khi soi trúng hình máy tính carton
         const video = document.getElementById('ar-video');
-        const fileInput = document.getElementById('file-input');
-        const playBtn = document.getElementById('play-btn');
         const target = document.getElementById('target-entity');
 
-        // BẮT BỘ ĐỆM TẢI FILE CỦA ĐIỆN THOẠI
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    video.src = event.target.result;
-                    video.load();
-                    playBtn.innerText = "⚡ Bấm Đây Để Bật Tiếng";
-                    playBtn.style.background = "#ff0055";
-                    playBtn.style.color = "#fff";
-                };
-                reader.readAsDataURL(file); // Chuyển file thành chuỗi DataURL trực tiếp để Chrome không chặn
-            }
+        target.addEventListener("targetFound", () => {
+            video.play();
         });
-
-        // BẬT TIẾNG & PHÁT VIDEO
-        playBtn.addEventListener('click', function() {
-            if (video.src) {
-                video.muted = false;
-                video.play();
-                playBtn.innerText = "✅ ĐÃ SẴN SÀNG!";
-                playBtn.style.background = "#00ffcc";
-                playBtn.style.color = "#000";
-            } else {
-                alert("Bạn phải chọn Video (Nút số 1) trước đã nhé!");
-            }
-        });
-
-        // TỰ ĐỘNG PHÁT KHI SOI VÀO BÌA CARTON
-        target.addEventListener("targetFound", () => { 
-            if (video.src) video.play(); 
-        });
-        target.addEventListener("targetLost", () => { 
-            if (video.src) video.pause(); 
+        target.addEventListener("targetLost", () => {
+            video.pause();
         });
     </script>
+
 </body>
 </html>
