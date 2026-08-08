@@ -4,9 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>AR Theo Đốc Hình Vẽ Mẫu</title>
     
-    <!-- Thư viện A-Frame & MindAR -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; }
@@ -31,10 +30,10 @@
 
     <div id="instruction">📸 Rọi camera vào hình vẽ trong tập...</div>
 
-    <!-- Đã bỏ ép buộc facingMode để camera tự mở linh hoạt trên mọi máy -->
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind;" 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiError: no;" 
         color-space="sRGB" 
+        embedded
         renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
