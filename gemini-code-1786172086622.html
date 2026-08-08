@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Theo Dõi Hình Vẽ Mẫu</title>
+
+    <!-- Thư viện A-Frame & MindAR -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; }
+        
+        #scan-guide {
+            position: fixed;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ffcc;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-family: sans-serif;
+            font-size: 0.9rem;
+            z-index: 999;
+            pointer-events: none;
+            border: 1px solid #00ffcc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scan-guide">📸 Đưa Camera vào hình vẽ trong tập...</div>
+
+    <!-- Nhận diện file targets.mind của riêng bạn -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
+             color-space="sRGB" 
+             renderer="colorManagement: true, physicallyCorrectLights" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false">
+      
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- KHỐI ẢO 3D HIỂN THỊ KHI TÌM THẤY HÌNH VẼ -->
+      <a-entity mindar-image-target="targetIndex: 0">
+        
+        <!-- Khối hộp 3D tự xoay đè ngay trên tấm hình -->
+        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="#00ffcc"
+               material="opacity: 0.85; transparent: true"
+               animation="property: rotation; to: 0 405 0; loop: true; dur: 4000">
+        </a-box>
+
+        <!-- Vòng tròn đỏ bên dưới -->
+        <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="0.3" radius-outer="0.4" color="#ff0055"></a-ring>
+
+      </a-entity>
+    </a-scene>
+
+<script>
+    // Ép dùng camera sau
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+    }).catch(err => {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    });
+</script>
+</body>
+</html>
