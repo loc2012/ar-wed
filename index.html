@@ -2,69 +2,43 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR VR Split Screen</title>
-    
+    <title>AR Split Screen</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        
-        /* Giao diện UI nằm đè lên trên */
-        #ui { position: absolute; top: 10px; left: 0; width: 100%; z-index: 9999; text-align: center; }
-        .btn { background: #00ffcc; padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; }
-
-        /* Chia đôi màn hình */
-        #container { display: flex; width: 100vw; height: 100vh; }
-        .eye { width: 50vw; height: 100vh; position: relative; }
-        a-scene { width: 100% !important; height: 100% !important; }
+        body { margin: 0; overflow: hidden; }
+        /* Tự chia đôi màn hình thủ công */
+        .split {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+        .view {
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
     </style>
 </head>
 <body>
-
-    <div id="ui">
-        <input type="file" id="vid-input" accept="video/mp4" style="display:none">
-        <button class="btn" onclick="document.getElementById('vid-input').click()">📂 Chọn Phim</button>
-        <button class="btn" id="play-btn">▶️ Phát</button>
-    </div>
-
-    <!-- Video chung cho cả 2 mắt -->
-    <video id="my-vid" loop playsinline webkit-playsinline muted style="display:none"></video>
-
-    <div id="container">
-        <!-- Mắt Trái -->
-        <div class="eye">
-            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" vr-mode-ui="enabled: false">
+    <div class="split">
+        <div class="view">
+            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: no;">
                 <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
                 <a-entity mindar-image-target="targetIndex: 0">
-                    <a-video src="#my-vid" width="1" height="0.56" position="0 0 0.01"></a-video>
+                    <a-box color="red" scale="0.2 0.2 0.2" position="0 0 0"></a-box>
                 </a-entity>
             </a-scene>
         </div>
-        <!-- Mắt Phải -->
-        <div class="eye">
-            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" vr-mode-ui="enabled: false">
+        <div class="view">
+            <a-scene embedded mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: no;">
                 <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
                 <a-entity mindar-image-target="targetIndex: 0">
-                    <a-video src="#my-vid" width="1" height="0.56" position="0 0 0.01"></a-video>
+                    <a-box color="red" scale="0.2 0.2 0.2" position="0 0 0"></a-box>
                 </a-entity>
             </a-scene>
         </div>
     </div>
-
-    <script>
-        const vid = document.getElementById('my-vid');
-        const input = document.getElementById('vid-input');
-        
-        input.onchange = (e) => {
-            vid.src = URL.createObjectURL(e.target.files[0]);
-            vid.load();
-        };
-
-        document.getElementById('play-btn').onclick = () => {
-            vid.muted = false;
-            vid.play();
-        };
-    </script>
 </body>
 </html>
