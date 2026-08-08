@@ -18,62 +18,60 @@
             font-family: sans-serif;
         }
 
-        /* Thanh điều khiển chọn file và phát video */
-        #control-bar {
+        /* Thanh công cụ chọn file cố định phía trên */
+        #ui-container {
             position: fixed;
-            top: 15px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 8px 16px;
-            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 8px 15px;
+            border-radius: 25px;
             border: 2px solid #00ffcc;
             display: flex;
             gap: 10px;
-            align-items: center;
+            box-shadow: 0 0 10px #00ffcc;
         }
 
         .btn {
             background: #00ffcc;
             color: #000;
             border: none;
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 8px 14px;
+            border-radius: 15px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
         }
 
-        #file-input {
-            display: none;
-        }
+        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Thanh công cụ nổi phía trên -->
-    <div id="control-bar">
-        <button class="btn" onclick="document.getElementById('file-input').click()">📂 1. Chọn Video</button>
-        <button class="btn" id="play-btn">▶️ 2. Phát / Bật Tiếng</button>
-        <input type="file" id="file-input" accept="video/*">
+    <div id="ui-container">
+        <button class="btn" onclick="document.getElementById('file-input').click()">📂 1. Chọn Video MP4</button>
+        <button class="btn" id="play-btn">▶️ 2. Mở Xem Phim</button>
+        <input type="file" id="file-input" accept="video/mp4,video/*">
     </div>
 
-    <!-- Khai báo thẻ video chuẩn bảo mật -->
-    <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted style="display:none;"></video>
+    <!-- Khai báo thẻ video chuẩn AR -->
+    <a-assets>
+        <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+    </a-assets>
 
-    <!-- Khung AR chuẩn không bị lỗi WebXR/VR -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="precision: low; antialias: false;" 
+        renderer="precision: low; antialias: false; colorManagement: true;" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            <!-- Tấm nền Video 16:9 dán lên mô hình máy tính carton -->
+            <!-- Tấm nền màn hình video 3D -->
             <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
         </a-entity>
 
@@ -85,32 +83,36 @@
         const playBtn = document.getElementById('play-btn');
         const target = document.getElementById('target-entity');
 
-        // 1. Khi chọn file video từ máy
-        fileInput.addEventListener('change', (e) => {
+        // BẮT BỘ ĐỆM TẢI FILE CỦA ĐIỆN THOẠI
+        fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                video.src = URL.createObjectURL(file);
-                video.load();
-                video.play().then(() => {
-                    playBtn.innerText = "🔊 Đang Phát (Bấm để bật tiếng)";
-                }).catch(err => {
-                    console.log("Cần bấm nút phát:", err);
-                });
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    video.src = event.target.result;
+                    video.load();
+                    playBtn.innerText = "⚡ Bấm Đây Để Bật Tiếng";
+                    playBtn.style.background = "#ff0055";
+                    playBtn.style.color = "#fff";
+                };
+                reader.readAsDataURL(file); // Chuyển file thành chuỗi DataURL trực tiếp để Chrome không chặn
             }
         });
 
-        // 2. Bấm nút để bật âm thanh & cho phép video chạy
-        playBtn.addEventListener('click', () => {
+        // BẬT TIẾNG & PHÁT VIDEO
+        playBtn.addEventListener('click', function() {
             if (video.src) {
-                video.muted = false; // Bật tiếng
+                video.muted = false;
                 video.play();
-                playBtn.innerText = "✅ Đã Bật Tiếng";
+                playBtn.innerText = "✅ ĐÃ SẴN SÀNG!";
+                playBtn.style.background = "#00ffcc";
+                playBtn.style.color = "#000";
             } else {
-                alert("Bạn chưa bấm nút '1. Chọn Video' kìa!");
+                alert("Bạn phải chọn Video (Nút số 1) trước đã nhé!");
             }
         });
 
-        // 3. Nhận diện hình carton
+        // TỰ ĐỘNG PHÁT KHI SOI VÀO BÌA CARTON
         target.addEventListener("targetFound", () => { 
             if (video.src) video.play(); 
         });
