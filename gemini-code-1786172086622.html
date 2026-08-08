@@ -1,66 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Theo Dõi Hình Vẽ Mẫu</title>
-
-    <!-- Thư viện A-Frame & MindAR -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ứng dụng AR Theo Hướng Tờ Giấy</title>
+    <!-- Thư viện A-Frame & MindAR bản chuẩn hỗ trợ hiển thị nét -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
-        body { margin: 0; overflow: hidden; }
-        
-        #scan-guide {
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        /* Ép khung AR full toàn màn hình */
+        a-scene {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1;
+        }
+        /* Khung thông báo hướng dẫn */
+        #ui-guide {
             position: fixed;
-            top: 20px; left: 50%;
+            top: 15px;
+            left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.75);
             color: #00ffcc;
             padding: 10px 20px;
             border-radius: 20px;
-            font-family: sans-serif;
-            font-size: 0.9rem;
+            font-size: 14px;
+            font-weight: bold;
             z-index: 999;
             pointer-events: none;
             border: 1px solid #00ffcc;
+            transition: opacity 0.3s ease;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <div id="scan-guide">📸 Đưa Camera vào hình vẽ trong tập...</div>
+    <div id="ui-guide">📸 Rọi camera vào hình vẽ trong tập...</div>
 
-    <!-- Nhận diện file targets.mind của riêng bạn -->
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
+    <!-- Cấu hình MindAR: Dùng file targets.mind cùng thư mục -->
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;" 
+        color-space="sRGB" 
+        embedded
+        renderer="colorManagement: true, physicallyCorrectLights: true, antialias: true" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
       
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- KHỐI ẢO 3D HIỂN THỊ KHI TÌM THẤY HÌNH VẼ -->
-      <a-entity mindar-image-target="targetIndex: 0">
+      <!-- Mục tiêu nhận diện -->
+      <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
         
-        <!-- Khối hộp 3D tự xoay đè ngay trên tấm hình -->
-        <a-box position="0 0.25 0" rotation="0 45 0" scale="0.5 0.5 0.5" color="#00ffcc"
-               material="opacity: 0.85; transparent: true"
-               animation="property: rotation; to: 0 405 0; loop: true; dur: 4000">
+        <!-- Khối 3D cố định (KHÔNG CÓ animation tự xoay, dính chặt theo tờ giấy) -->
+        <a-box 
+            position="0 0.25 0" 
+            rotation="0 0 0" 
+            scale="0.5 0.5 0.5" 
+            material="color: #00ffcc; opacity: 0.9; transparent: true; roughness: 0.3; metalness: 0.2;">
         </a-box>
 
-        <!-- Vòng tròn đỏ bên dưới -->
-        <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="0.3" radius-outer="0.4" color="#ff0055"></a-ring>
+        <!-- Khung viền vuông báo hiệu vị trí dưới chân khối -->
+        <a-plane 
+            position="0 0 0" 
+            rotation="-90 0 0" 
+            width="0.7" 
+            height="0.7" 
+            material="color: #00ffcc; wireframe: true; wireframeLinewidth: 2">
+        </a-plane>
 
       </a-entity>
     </a-scene>
 
 <script>
-    // Ép dùng camera sau
-    navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } }
-    }).catch(err => {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    // Xử lý ẩn/hiện thông báo khi quét thấy hoặc mất hình vẽ
+    const guideText = document.getElementById('ui-guide');
+    const targetAnchor = document.getElementById('target-anchor');
+
+    targetAnchor.addEventListener("targetFound", () => {
+        guideText.innerText = "✅ Đã nhận diện hình vẽ!";
+        guideText.style.color = "#00ff88";
+        guideText.style.borderColor = "#00ff88";
+    });
+
+    targetAnchor.addEventListener("targetLost", () => {
+        guideText.innerText = "📸 Rọi camera vào hình vẽ trong tập...";
+        guideText.style.color = "#00ffcc";
+        guideText.style.borderColor = "#00ffcc";
     });
 </script>
 </body>
