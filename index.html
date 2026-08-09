@@ -2,97 +2,36 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 1: Test Camera Sau</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-        video { width: 100vw; height: 100vh; object-fit: cover; }
-        #msg { position: fixed; top: 10px; left: 10px; color: #00ffcc; background: rgba(0,0,0,0.7); padding: 8px; z-index: 99; font-family: sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="msg">📹 Đang thử kết nối Camera Sau...</div>
-    <video id="webcam" autoplay playsinline muted></video>
-
-    <script>
-        const video = document.getElementById('webcam');
-        const msg = document.getElementById('msg');
-
-        // Bắt buộc gọi Camera Sau (facingMode: environment)
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: "environment" } }
-        })
-        .then(stream => {
-            video.srcObject = stream;
-            msg.innerText = "✅ CAMERA SAU HOẠT ĐỘNG TỐT!";
-        })
-        .catch(err => {
-            // Nếu không lấy được exact environment, thử gọi camera sau dạng thường
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => {
-                video.srcObject = stream;
-                msg.innerText = "✅ CAMERA SAU HOẠT ĐỘNG TỐT!";
-            })
-            .catch(e => {
-                msg.innerText = "❌ LỖI KHÔNG MỞ ĐƯỢC CAM: " + e.message;
-            });
-        });
-    </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 2: Test AR (Có Status)</title>
+    <title>AR Video Full Fix</title>
+    
+    <!-- Nạp thư viện A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
-        #status-bar { position: fixed; top: 10px; left: 10px; z-index: 9999; background: rgba(0,255,204,0.8); padding: 10px; border-radius: 8px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div id="status-bar">⏳ Đang nạp AR...</div>
 
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        color-space="sRGB" 
-        renderer="colorManagement: false; antialias: false;">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
         
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        #status-bar { 
+            position: fixed; top: 10px; left: 10px; z-index: 9999; 
+            background: rgba(0, 0, 0, 0.8); color: #00ffcc; padding: 10px 15px; 
+            border-radius: 10px; font-weight: bold; border: 1px solid #00ffcc; 
+            font-family: sans-serif; font-size: 13px;
+        }
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-box position="0 0 0" scale="0.5 0.5 0.5" color="#00ffcc"></a-box>
-        </a-entity>
-    </a-scene>
+        #ui-controls { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            z-index: 9999; display: flex; gap: 10px; 
+        }
 
-    <script>
-        const sceneEl = document.querySelector('#ar-scene');
-        sceneEl.addEventListener('loaded', () => {
-            document.getElementById('status-bar').innerText = "✅ AR SẴN SÀNG - Rọi Cam Vào Hình!";
-        });
-    </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Pro - 3D Effect</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-        #status-bar { position: fixed; top: 10px; left: 10px; z-index: 9999; background: rgba(0, 0, 0, 0.7); color: #00ffcc; padding: 10px; border-radius: 10px; font-weight: bold; border: 1px solid #00ffcc; }
-        #ui-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; gap: 10px; }
-        button { background: #00ffcc; border: none; padding: 12px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        button { 
+            background: #00ffcc; color: #000; border: none; padding: 12px 20px; 
+            border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; 
+        }
     </style>
 </head>
 <body>
 
-    <div id="status-bar">🚀 Đang khởi tạo...</div>
+    <div id="status-bar">🚀 Đang nạp AR... Hãy đợi chút!</div>
     
     <div id="ui-controls">
         <button onclick="document.getElementById('v-input').click()">📂 Chọn Video</button>
@@ -100,9 +39,10 @@
         <input type="file" id="v-input" accept="video/*" style="display:none">
     </div>
 
-    <!-- Video ẩn, nguồn phát -->
+    <!-- Video ẩn dùng để render 3D -->
     <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted style="display:none;"></video>
 
+    <!-- Khung cảnh AR MindAR -->
     <a-scene 
         id="ar-scene"
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
@@ -112,62 +52,70 @@
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- Nhóm đối tượng AR -->
+        <!-- Nhóm chứa đối tượng AR -->
         <a-entity mindar-image-target="targetIndex: 0" id="target">
-            
-            <!-- 1. Màn hình Video -->
-            <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0"></a-video>
-
-            <!-- 2. Hiệu ứng khung viền 3D (Tạo chiều sâu) -->
-            <a-ring radius-inner="0.6" radius-outer="0.65" color="#00ffcc" material="side: double" rotation="90 0 0" position="0 0 0.05"></a-ring>
-            
-            <!-- 3. Chữ AR nổi (Optional) -->
-            <a-text value="AR VIDEO PLAYING" color="#ffffff" align="center" position="0 -0.4 0.02" scale="0.3 0.3 0.3"></a-text>
-
+            <!-- Màn hình phát video -->
+            <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
+            <!-- Khung viền 3D màu xanh nổi lên để báo hiệu AR đã bắt dính -->
+            <a-ring radius-inner="0.55" radius-outer="0.6" color="#00ffcc" material="side: double" rotation="0 0 0" position="0 0 0.02"></a-ring>
         </a-entity>
+
     </a-scene>
 
     <script>
-    const video = document.getElementById('ar-video');
-    const input = document.getElementById('v-input');
-    const pBtn = document.getElementById('p-btn');
-    const status = document.getElementById('status-bar');
-    const target = document.getElementById('target');
+        const video = document.getElementById('ar-video');
+        const input = document.getElementById('v-input');
+        const pBtn = document.getElementById('p-btn');
+        const status = document.getElementById('status-bar');
+        const target = document.getElementById('target');
+        const scene = document.querySelector('#ar-scene');
 
-    input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Tạo đường dẫn tạm cho video
-            video.src = URL.createObjectURL(file);
-            video.load();
-            
-            // Ép video chạy ngầm ngay để kiểm tra file có lỗi không
-            video.play().then(() => {
-                if (status) status.innerText = "✅ Video đã nạp xong! Rọi cam vào ảnh đi.";
-                alert("Nạp video thành công! Bây giờ hãy rọi camera vào hình vẽ.");
-            }).catch(err => {
-                alert("❌ File video này bị lỗi hoặc không đúng định dạng MP4! Hãy chọn file khác.");
-            });
-        }
-    };
+        // Báo trạng thái sẵn sàng
+        scene.addEventListener('loaded', () => {
+            status.innerText = "✅ AR Sẵn Sàng! Hãy Bấm '📂 Chọn Video'.";
+        });
 
-    pBtn.onclick = () => {
-        if (video.src) {
-            video.muted = false;
-            video.play();
-        } else {
-            alert("Hãy bấm '📂 Chọn Video' trước!");
-        }
-    };
+        // Xử lý nạp File Video
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                video.src = URL.createObjectURL(file);
+                video.load();
+                video.muted = true; // Ép muted để Chrome không chặn
+                
+                video.play().then(() => {
+                    status.innerText = "✅ Video nạp thành công! Rọi camera vào hình vẽ đi.";
+                }).catch(err => {
+                    status.innerText = "❌ File video bị lỗi hoặc không hỗ trợ!";
+                });
+            }
+        };
 
-    target.addEventListener("targetFound", () => { 
-        if (video.src) video.play(); 
-    });
-    
-    target.addEventListener("targetLost", () => { 
-        if (video.src) video.pause(); 
-    });
-</script>
+        // Bật tiếng
+        pBtn.onclick = () => {
+            if (video.src) {
+                video.muted = false;
+                video.play();
+                status.innerText = "🔊 Đã Bật Tiếng Video!";
+            } else {
+                alert("Bạn chưa chọn file video!");
+            }
+        };
 
+        // Bắt sự kiện rọi camera trúng hình ảnh
+        target.addEventListener("targetFound", () => { 
+            if (video.src) {
+                video.play();
+                status.innerText = "🎯 BẮT TRÚNG HÌNH! Đang phát Video AR...";
+            } else {
+                status.innerText = "🎯 Bắt trúng hình! Nhưng bạn chưa chọn Video.";
+            }
+        });
+        
+        target.addEventListener("targetLost", () => { 
+            if (video.src) video.pause();
+            status.innerText = "⚠️ Mất dấu hình vẽ - Hãy rọi lại camera vào ảnh!";
+        });
+    </script>
 </body>
 </html>
