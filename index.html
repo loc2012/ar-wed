@@ -2,56 +2,109 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Test</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <title>AR Video Single Screen</title>
+    
+    <!-- Thư viện A-Frame & MindAR bản ổn định nhất -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
+
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
-        /* Ép canvas luôn tràn màn hình */
-        canvas { width: 100% !important; height: 100% !important; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #ui-bar {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999999;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #00ffcc;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        #video-input { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Đặt camera ở đây. Chú ý: Cấu hình cực nhẹ để máy cũ không bị văng -->
+    <!-- Thanh công cụ góc trên -->
+    <div id="ui-bar">
+        <button class="btn" onclick="document.getElementById('video-input').click()">📂 Chọn Video</button>
+        <button class="btn" id="play-btn">▶️ Mở Tiếng / Phát</button>
+        <input type="file" id="video-input" accept="video/*">
+    </div>
+
+    <!-- Video lưu ẩn trong memory -->
+    <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted style="display:none;"></video>
+
+    <!-- Khung AR Đơn (Không VR UI, Không Chia Đôi) -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        renderer="colorManagement: false; antialias: false;"
-        vr-mode-ui="enabled: true"
+        color-space="sRGB" 
+        renderer="colorManagement: false; antialias: false;" 
+        vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
-        <a-assets>
-            <video id="vid" loop playsinline webkit-playsinline muted></video>
-        </a-assets>
-
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0" id="target">
-            <a-video src="#vid" width="1" height="0.56" position="0 0 0"></a-video>
+        <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
+            <!-- Tấm nền Video 16:9 -->
+            <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
         </a-entity>
+
     </a-scene>
 
     <script>
-        // Thêm nút bấm thủ công để "kích hoạt" camera nếu nó bị đen
-        window.addEventListener('click', () => {
-            const scene = document.querySelector('a-scene');
-            // Cố gắng bắt sự kiện của A-Frame để kích hoạt lại render
-            scene.resize();
+        const video = document.getElementById('ar-video');
+        const fileInput = document.getElementById('video-input');
+        const playBtn = document.getElementById('play-btn');
+        const target = document.getElementById('target-entity');
+
+        // Chọn Video từ máy
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                video.src = URL.createObjectURL(file);
+                video.load();
+                video.play();
+                playBtn.innerText = "🔊 Bấm Bật Tiếng";
+            }
         });
 
-        // Xử lý video
-        const v = document.getElementById('vid');
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'video/*';
-        fileInput.style.position = 'fixed'; fileInput.style.top = '10px'; fileInput.style.zIndex = '9999';
-        document.body.appendChild(fileInput);
+        // Nút Phát / Bật Tiếng
+        playBtn.addEventListener('click', () => {
+            if(video.src) {
+                video.muted = false;
+                video.play();
+                playBtn.innerText = "✅ Đang Chạy";
+            } else {
+                alert("Hãy bấm '📂 Chọn Video' trước!");
+            }
+        });
 
-        fileInput.onchange = (e) => {
-            v.src = URL.createObjectURL(e.target.files[0]);
-            v.play();
-        };
+        // Rọi camera trúng hình thì phát
+        target.addEventListener("targetFound", () => { if (video.src) video.play(); });
+        target.addEventListener("targetLost", () => { if (video.src) video.pause(); });
     </script>
 </body>
 </html>
