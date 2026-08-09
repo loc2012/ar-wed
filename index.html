@@ -2,29 +2,40 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Debug Khai Báo HTML</title>
+    <title>Khối 1: Test Camera Sau</title>
     <style>
-        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; }
-        #btn-bar { padding: 15px; background: #222; }
-        button { background: #00ffcc; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 8px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        video { width: 100vw; height: 100vh; object-fit: cover; }
+        #msg { position: fixed; top: 10px; left: 10px; color: #00ffcc; background: rgba(0,0,0,0.7); padding: 8px; z-index: 99; font-family: sans-serif; }
     </style>
 </head>
 <body>
-
-    <div id="btn-bar">
-        <button onclick="document.getElementById('file-input').click()">📂 Chọn Video Test</button>
-        <input type="file" id="file-input" accept="video/*" style="display:none">
-    </div>
-
-    <h3 id="status">Màn hình khung HTML đã lên!</h3>
+    <div id="msg">📹 Đang thử kết nối Camera Sau...</div>
+    <video id="webcam" autoplay playsinline muted></video>
 
     <script>
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            if (e.target.files[0]) {
-                document.getElementById('status').innerText = "✅ Đã chọn file: " + e.target.files[0].name;
-            }
+        const video = document.getElementById('webcam');
+        const msg = document.getElementById('msg');
+
+        // Bắt buộc gọi Camera Sau (facingMode: environment)
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" } }
+        })
+        .then(stream => {
+            video.srcObject = stream;
+            msg.innerText = "✅ CAMERA SAU HOẠT ĐỘNG TỐT!";
+        })
+        .catch(err => {
+            // Nếu không lấy được exact environment, thử gọi camera sau dạng thường
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                video.srcObject = stream;
+                msg.innerText = "✅ CAMERA SAU HOẠT ĐỘNG TỐT!";
+            })
+            .catch(e => {
+                msg.innerText = "❌ LỖI KHÔNG MỞ ĐƯỢC CAM: " + e.message;
+            });
         });
     </script>
 </body>
 </html>
-
