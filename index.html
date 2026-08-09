@@ -8,124 +8,68 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-        }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
         
-        /* Bắt buộc khung AR tràn 100% màn hình */
-        a-scene {
-            width: 100vw !important;
-            height: 100vh !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-        }
+        a-scene { width: 100vw !important; height: 100vh !important; position: absolute !important; top: 0 !important; left: 0 !important; }
 
-        #instruction {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00ffcc;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-family: sans-serif;
-            border: 1px solid #00ffcc;
-            text-align: center;
-            font-size: 13px;
+        #ui-overlay {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 99999;
+            background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 20px; border: 1px solid #00ffcc;
+            text-align: center; font-family: sans-serif;
         }
-
-        /* Nút bấm tải video bổ sung */
-        .btn-upload {
-            margin-top: 5px;
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
-        }
+        .btn { background: #00ffcc; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="instruction">
-        📸 Bấm nút VR (góc dưới) để chia đôi màn hình<br>
-        <button class="btn-upload" onclick="document.getElementById('video-file').click()">📂 Chọn Phim MP4</button>
-        <button class="btn-upload" id="play-btn" style="display:none;">▶️ Bật Tiếng</button>
-        <input type="file" id="video-file" accept="video/*" style="display:none;">
+    <div id="ui-overlay">
+        <button class="btn" onclick="document.getElementById('file-input').click()">📂 Chọn Phim</button>
+        <button class="btn" id="play-btn">▶️ Phát</button>
+        <input type="file" id="file-input" accept="video/*" style="display:none;">
     </div>
 
-    <!-- Khai báo thẻ video ngầm -->
     <a-assets>
         <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
     </a-assets>
 
+    <!-- ĐÃ SỬA: Bỏ physicallyCorrectLights (nguyên nhân gây đen màn), dùng precision: low để máy cũ chạy mượt -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
+        renderer="precision: low; antialias: false;" 
         vr-mode-ui="enabled: true" 
         device-orientation-permission-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            <!-- Khối cầu trung tâm (Giữ nguyên) -->
             <a-sphere color="red" radius="0.1" position="0 0 0.05"></a-sphere>
-            
-            <!-- Khối lập phương quay (Giữ nguyên) -->
             <a-box position="0 0 0.25" material="color: #4CC3D9; wireframe: true" scale="0.25 0.25 0.25"
                    animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
             </a-box>
-
-            <!-- THÊM: Màn hình Video 3D khớp tỷ lệ 16:9 phẳng nằm ngay tâm mặt phẳng target -->
+            <!-- Video dán lên -->
             <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
         </a-entity>
-
     </a-scene>
 
     <script>
         const video = document.getElementById('ar-video');
-        const fileInput = document.getElementById('video-file');
+        const fileInput = document.getElementById('file-input');
         const playBtn = document.getElementById('play-btn');
-        const target = document.getElementById('target-entity');
 
-        // 1. Tải video từ máy điện thoại
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 video.src = URL.createObjectURL(file);
                 video.load();
-                video.play();
-                playBtn.style.display = "inline-block";
             }
         });
 
-        // 2. Nút Bật Tiếng (tránh bị Chrome chặn âm thanh)
         playBtn.addEventListener('click', () => {
             video.muted = false;
             video.play();
-            playBtn.innerText = "🔊 Đã Bật Tiếng";
-        });
-
-        // 3. Soi camera trúng hình thì tự chạy video, mất hình thì tạm dừng
-        target.addEventListener("targetFound", () => {
-            if (video.src) video.play();
-        });
-        target.addEventListener("targetLost", () => {
-            if (video.src) video.pause();
+            playBtn.innerText = "🔊 Đang Phát";
         });
     </script>
-
 </body>
 </html>
