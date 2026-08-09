@@ -128,47 +128,46 @@
     </a-scene>
 
     <script>
-        const video = document.getElementById('ar-video');
-        const input = document.getElementById('v-input');
-        const pBtn = document.getElementById('p-btn');
-        const status = document.getElementById('status-bar');
-        const target = document.getElementById('target');
+    const video = document.getElementById('ar-video');
+    const input = document.getElementById('v-input');
+    const pBtn = document.getElementById('p-btn');
+    const status = document.getElementById('status-bar');
+    const target = document.getElementById('target');
 
-        document.querySelector('#ar-scene').addEventListener('loaded', () => {
-            status.innerText = "✅ Sẵn sàng! Chọn Video.";
-        });
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Tạo đường dẫn tạm cho video
+            video.src = URL.createObjectURL(file);
+            video.load();
+            
+            // Ép video chạy ngầm ngay để kiểm tra file có lỗi không
+            video.play().then(() => {
+                if (status) status.innerText = "✅ Video đã nạp xong! Rọi cam vào ảnh đi.";
+                alert("Nạp video thành công! Bây giờ hãy rọi camera vào hình vẽ.");
+            }).catch(err => {
+                alert("❌ File video này bị lỗi hoặc không đúng định dạng MP4! Hãy chọn file khác.");
+            });
+        }
+    };
 
-        input.onchange = (e) => {
-            if (e.target.files[0]) {
-                video.src = URL.createObjectURL(e.target.files[0]);
-                video.load();
-                status.innerText = "✅ Video đã sẵn sàng!";
-            }
-        };
+    pBtn.onclick = () => {
+        if (video.src) {
+            video.muted = false;
+            video.play();
+        } else {
+            alert("Hãy bấm '📂 Chọn Video' trước!");
+        }
+    };
 
-        pBtn.onclick = () => {
-            if (video.src) {
-                video.muted = false;
-                video.play();
-                status.innerText = "🔊 Đang phát âm thanh...";
-            } else {
-                alert("Bạn chưa chọn video!");
-            }
-        };
+    target.addEventListener("targetFound", () => { 
+        if (video.src) video.play(); 
+    });
+    
+    target.addEventListener("targetLost", () => { 
+        if (video.src) video.pause(); 
+    });
+</script>
 
-        target.addEventListener("targetFound", () => { 
-            if (video.src) {
-                video.play();
-                status.innerText = "🎯 Đang bắt hình! Video chạy...";
-            }
-        });
-        
-        target.addEventListener("targetLost", () => { 
-            if (video.src) {
-                video.pause();
-                status.innerText = "⚠️ Mất dấu - Rọi lại vào hình!";
-            }
-        });
-    </script>
 </body>
 </html>
