@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Web AR - Chia Đôi Màn Hình</title>
+    <title>Web AR - Chia Đôi Màn Hình Chuẩn</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -34,26 +34,50 @@
             pointer-events: none;
         }
 
-        /* Vùng chứa 2 màn hình chia đôi */
-        .split-container {
-            display: flex;
+        /* Khung chứa chia đôi */
+        .split-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
+            display: flex;
+            z-index: 1;
         }
 
-        /* Mỗi nửa màn hình chiếm 50% */
-        .view-left, .view-right {
-            flex: 1;
-            height: 100%;
+        /* Nửa bên trái */
+        .split-left {
+            width: 50vw;
+            height: 100vh;
             position: relative;
             overflow: hidden;
-            border-right: 1px solid rgba(0, 255, 204, 0.3);
+            border-right: 1px solid #00ffcc;
         }
 
-        /* Ép khung canvas của A-Frame phủ đều */
-        a-scene {
-            width: 100%;
-            height: 100%;
+        /* Nửa bên phải (Mirror/Clone từ scene chính) */
+        .split-right {
+            width: 50vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ép Canvas AR nằm vừa vào 2 nửa */
+        .split-left a-scene {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .split-right-content {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transform: scaleX(1); /* Clone giao diện */
         }
     </style>
 </head>
@@ -61,68 +85,49 @@
 
     <div id="instruction">📸 Rọi camera vào hình vẽ...</div>
 
-    <!-- Khung chia đôi màn hình -->
-    <div class="split-container">
+    <!-- Màn hình chính chứa Scene AR -->
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
         
-        <!-- MÀN HÌNH BÊN TRÁI -->
-        <div class="view-left">
-            <a-scene 
-                mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-                color-space="sRGB" 
-                renderer="colorManagement: true, physicallyCorrectLights" 
-                vr-mode-ui="enabled: false" 
-                device-orientation-permission-ui="enabled: false"
-                embedded>
-                
-                <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-                <a-entity mindar-image-target="targetIndex: 0" id="target-left">
-                    <!-- Hiệu ứng khối lập phương 3D xoay tại tâm -->
-                    <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.4 0.4 0.4"
-                           animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-                    </a-box>
-                    <a-circle color="red" radius="0.08" position="0 0 0.01"></a-circle>
-                </a-entity>
+        <a-entity mindar-image-target="targetIndex: 0" id="ar-target">
+            <!-- Khối xoay 3D -->
+            <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.4 0.4 0.4"
+                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+            </a-box>
+            <a-circle color="red" radius="0.08" position="0 0 0.01"></a-circle>
+        </a-entity>
 
-            </a-scene>
-        </div>
-
-        <!-- MÀN HÌNH BÊN PHẢI -->
-        <div class="view-right">
-            <a-scene 
-                mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-                color-space="sRGB" 
-                renderer="colorManagement: true, physicallyCorrectLights" 
-                vr-mode-ui="enabled: false" 
-                device-orientation-permission-ui="enabled: false"
-                embedded>
-                
-                <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-                <a-entity mindar-image-target="targetIndex: 0" id="target-right">
-                    <!-- Hiệu ứng khối lập phương 3D xoay song song -->
-                    <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.4 0.4 0.4"
-                           animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-                    </a-box>
-                    <a-circle color="red" radius="0.08" position="0 0 0.01"></a-circle>
-                </a-entity>
-
-            </a-scene>
-        </div>
-
-    </div>
+    </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const instruction = document.getElementById("instruction");
-            const targetLeft = document.getElementById("target-left");
+            const target = document.getElementById("ar-target");
 
-            if (targetLeft) {
-                targetLeft.addEventListener("targetFound", function () {
+            // Xử lý tạo hiệu ứng Split Screen bằng cách nhân bản Canvas
+            window.addEventListener("arReady", () => {
+                const canvas = document.querySelector(".a-canvas");
+                const video = document.querySelector("video");
+                
+                // Ép màn hình hiển thị nửa trái - nửa phải
+                if (canvas) {
+                    canvas.style.width = "50vw";
+                    canvas.style.left = "0";
+                }
+            });
+
+            if (target) {
+                target.addEventListener("targetFound", function () {
                     instruction.textContent = "🎯 Đã bắt được hình!";
                 });
 
-                targetLeft.addEventListener("targetLost", function () {
+                target.addEventListener("targetLost", function () {
                     instruction.textContent = "⚠️ Mất dấu - Rọi lại vào hình!";
                 });
             }
