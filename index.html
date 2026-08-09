@@ -2,9 +2,8 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Video Single Screen</title>
+    <title>AR Video Fix Black Screen</title>
     
-    <!-- Thư viện A-Frame & MindAR bản ổn định nhất -->
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
 
@@ -18,13 +17,14 @@
             background-color: #000;
         }
 
+        /* Thanh công cụ góc trên */
         #ui-bar {
             position: fixed;
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             padding: 8px 15px;
             border-radius: 20px;
             border: 1px solid #00ffcc;
@@ -36,10 +36,11 @@
             background: #00ffcc;
             color: #000;
             border: none;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 10px;
             font-weight: bold;
             font-size: 12px;
+            cursor: pointer;
         }
 
         #video-input { display: none; }
@@ -47,40 +48,49 @@
 </head>
 <body>
 
-    <!-- Thanh công cụ góc trên -->
     <div id="ui-bar">
         <button class="btn" onclick="document.getElementById('video-input').click()">📂 Chọn Video</button>
         <button class="btn" id="play-btn">▶️ Mở Tiếng / Phát</button>
         <input type="file" id="video-input" accept="video/*">
     </div>
 
-    <!-- Video lưu ẩn trong memory -->
+    <!-- File Video phát AR -->
     <video id="ar-video" loop crossorigin="anonymous" playsinline webkit-playsinline muted style="display:none;"></video>
 
-    <!-- Khung AR Đơn (Không VR UI, Không Chia Đôi) -->
+    <!-- Ép renderer chạy đúng GPU điện thoại -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="colorManagement: false; antialias: false;" 
+        embedded
+        renderer="colorManagement: false; antialias: false; powerPreference: high-performance;" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            <!-- Tấm nền Video 16:9 -->
             <a-video src="#ar-video" width="1" height="0.5625" position="0 0 0.01"></a-video>
         </a-entity>
 
     </a-scene>
 
     <script>
+        // Ép A-Frame cập nhật lại kích thước Canvas khi mở Camera
+        window.addEventListener('load', () => {
+            const sceneEl = document.querySelector('a-scene');
+            sceneEl.addEventListener('renderstart', () => {
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 1000);
+            });
+        });
+
         const video = document.getElementById('ar-video');
         const fileInput = document.getElementById('video-input');
         const playBtn = document.getElementById('play-btn');
         const target = document.getElementById('target-entity');
 
-        // Chọn Video từ máy
+        // Lấy file video từ máy
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -91,18 +101,18 @@
             }
         });
 
-        // Nút Phát / Bật Tiếng
+        // Kích hoạt âm thanh
         playBtn.addEventListener('click', () => {
             if(video.src) {
                 video.muted = false;
                 video.play();
                 playBtn.innerText = "✅ Đang Chạy";
             } else {
-                alert("Hãy bấm '📂 Chọn Video' trước!");
+                alert("Bấm '📂 Chọn Video' trước bạn nhé!");
             }
         });
 
-        // Rọi camera trúng hình thì phát
+        // Sự kiện nhận diện AR
         target.addEventListener("targetFound", () => { if (video.src) video.play(); });
         target.addEventListener("targetLost", () => { if (video.src) video.pause(); });
     </script>
