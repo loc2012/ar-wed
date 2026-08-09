@@ -1,69 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR VR Split Screen</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Test</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
-        
-        /* Giao diện UI nằm ngoài, không đụng vào A-Frame */
-        #controls { position: absolute; top: 10px; left: 10px; z-index: 9999; }
-        .btn { background: #00ffcc; border: none; padding: 10px; border-radius: 5px; font-weight: bold; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
+        /* Ép canvas luôn tràn màn hình */
+        canvas { width: 100% !important; height: 100% !important; }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <input type="file" id="v-file" accept="video/*" style="display:none">
-        <button class="btn" onclick="document.getElementById('v-file').click()">📂 Chọn Phim</button>
-        <button class="btn" id="p-btn">▶️ Phát</button>
-    </div>
-
-    <!-- Tải trước video -->
-    <a-assets>
-        <video id="vid" loop playsinline webkit-playsinline muted style="display:none"></video>
-    </a-assets>
-
+    <!-- Đặt camera ở đây. Chú ý: Cấu hình cực nhẹ để máy cũ không bị văng -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        color-space="sRGB" 
-        renderer="precision: low; antialias: false;" 
-        vr-mode-ui="enabled: true" 
+        embedded
+        renderer="colorManagement: false; antialias: false;"
+        vr-mode-ui="enabled: true"
         device-orientation-permission-ui="enabled: false">
         
+        <a-assets>
+            <video id="vid" loop playsinline webkit-playsinline muted></video>
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            <!-- Giữ nguyên các khối cũ -->
-            <a-sphere color="red" radius="0.1" position="0 0 0.05"></a-sphere>
-            <a-box position="0 0 0.25" material="color: #4CC3D9; wireframe: true" scale="0.25 0.25 0.25"
-                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-            </a-box>
-            
-            <!-- Video ẩn, chỉ hiện khi chọn file xong -->
-            <a-video id="vid-screen" src="#vid" width="1" height="0.56" position="0 0 0.01" visible="false"></a-video>
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+            <a-video src="#vid" width="1" height="0.56" position="0 0 0"></a-video>
         </a-entity>
-
     </a-scene>
 
     <script>
-        const v = document.getElementById('vid');
-        const s = document.getElementById('vid-screen');
-        
-        // Khi chọn file
-        document.getElementById('v-file').onchange = (e) => {
-            v.src = URL.createObjectURL(e.target.files[0]);
-            v.load();
-            s.setAttribute('visible', 'true'); // Chỉ hiện màn hình khi có video
-        };
+        // Thêm nút bấm thủ công để "kích hoạt" camera nếu nó bị đen
+        window.addEventListener('click', () => {
+            const scene = document.querySelector('a-scene');
+            // Cố gắng bắt sự kiện của A-Frame để kích hoạt lại render
+            scene.resize();
+        });
 
-        // Khi bấm Phát
-        document.getElementById('p-btn').onclick = () => {
-            v.muted = false;
+        // Xử lý video
+        const v = document.getElementById('vid');
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'video/*';
+        fileInput.style.position = 'fixed'; fileInput.style.top = '10px'; fileInput.style.zIndex = '9999';
+        document.body.appendChild(fileInput);
+
+        fileInput.onchange = (e) => {
+            v.src = URL.createObjectURL(e.target.files[0]);
             v.play();
         };
     </script>
