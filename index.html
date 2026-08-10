@@ -447,10 +447,14 @@
                     ctx.lineWidth = 4;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
-                    // --- VẼ KHỐI VUÔNG ĐỎ (ĐÃ TĂNG NỔI BẬT) ---
-                    let size = 120; // Tăng size lên 120px cho to rực rỡ
+                                        // --- VẼ KHỐI VUÔNG ĐỎ (ĐÃ SỬA LỖI LỆCH TRỤC Y) ---
+                    let size = 100;
+                    // Lật ngược lại trục Y nếu camera bị ngược, hoặc vẽ trực tiếp
                     ctx.fillStyle = "#ff0000";
                     ctx.fillRect(avgX - size / 2, avgY - size / 2, size, size);
+                    ctx.strokeStyle = "#ffff00";
+                    ctx.lineWidth = 5;
+                    ctx.strokeRect(avgX - size / 2, avgY - size / 2, size, size);
 
                     // Viền vàng Neon to dày
                     ctx.strokeStyle = "#ffff00";
