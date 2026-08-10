@@ -447,49 +447,32 @@
                     ctx.lineWidth = 4;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
-                                        // --- VẼ KHỐI VUÔNG ĐỎ (ĐÃ SỬA LỖI LỆCH TRỤC Y) ---
+                    // --- VẼ KHỐI VUÔNG ĐỎ ---
                     let size = 100;
-                    // Lật ngược lại trục Y nếu camera bị ngược, hoặc vẽ trực tiếp
                     ctx.fillStyle = "#ff0000";
                     ctx.fillRect(avgX - size / 2, avgY - size / 2, size, size);
                     ctx.strokeStyle = "#ffff00";
                     ctx.lineWidth = 5;
                     ctx.strokeRect(avgX - size / 2, avgY - size / 2, size, size);
 
-                    // Viền vàng Neon to dày
-                    ctx.strokeStyle = "#ffff00";
-                    ctx.lineWidth = 8;
-                    ctx.strokeRect(avgX - size / 2, avgY - size / 2, size, size);
-
-
-    
-                    // Chấm trắng tâm điểm chính giữa
-                    ctx.beginPath();
-                    ctx.arc(avgX, avgY, 5, 0, 2 * Math.PI, false);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-
-                    // --- CẬP NHẬT BẢNG THÔNG SỐ REALTIME ---
+                    // CẬP NHẬT BẢNG THÔNG SỐ REALTIME
                     statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
                     statusText.style.color = "#00ffcc";
                     coordsText.innerText = `Tọa độ (X, Y): X = ${avgX} px | Y = ${avgY} px`;
-                    statsText.innerText = `Diện tích: ${count} px | Bán kính: ${Math.round(radius)} px`;
+                    statsText.innerText = `Diện tích: ${count} px`;
                 } else {
-                    // Trạng thái khi không thấy đèn
                     statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
                     statusText.style.color = "#ff0055";
                     coordsText.innerText = `Tọa độ (X, Y): -- , --`;
-                    statsText.innerText = `Diện tích: 0 px | Bán kính: 0 px`;
+                    statsText.innerText = `Diện tích: 0 px`;
                 }
             }
-
             requestAnimationFrame(processKhoi3);
         }
-
-        requestAnimationFrame(processKhoi3);
     </script>
 </body>
 </html>
+
  
     
 
