@@ -3,218 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Pro - Tổng Hợp 3 Khối Logic</title>
+    <title>Khối 1: Bật Camera Chuẩn</title>
     
-    <!-- Thư viện A-Frame và MindAR chuẩn -->
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
     <style>
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            background: #000;
             overflow: hidden;
-            background-color: #000;
             font-family: sans-serif;
         }
 
-        /* Khối 1: Thanh trạng thái thông báo */
-        #status-bar {
+        /* Đèn báo trạng thái Khối 1 */
+        #block1-status {
             position: fixed;
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 99999;
-            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
             color: #00ffcc;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: 20px;
             border: 1px solid #00ffcc;
             font-size: 13px;
             font-weight: bold;
             text-align: center;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
-            pointer-events: none;
-            width: 80%;
-            max-width: 320px;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
         }
 
-        /* Khối 3: Bảng điều khiển nút bấm */
-        #ui-controls {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 99999;
-            display: flex;
-            gap: 12px;
-        }
-
-        button {
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            padding: 12px 18px;
-            border-radius: 25px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        #v-input {
-            display: none;
+        /* Thẻ hiển thị hình ảnh Camera toàn màn hình */
+        #camera-feed {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-    <!-- UI Trạng thái (Khối 1 & 2) -->
-    <div id="status-bar">📹 Đang khởi tạo Camera & AR...</div>
+    <!-- THÔNG BÁO TÊN KHỐI & TRẠNG THÁI -->
+    <div id="block1-status">📌 [KHỐI 1] Đang khởi động Camera Sau...</div>
 
-    <!-- UI Nút bấm chọn Video/Bật tiếng (Khối 3) -->
-    <div id="ui-controls">
-        <button id="btn-select">📂 Chọn Video</button>
-        <button id="btn-audio">▶️ Mở Tiếng</button>
-        <input type="file" id="v-input" accept="video/*">
-    </div>
+    <!-- KHUNG HIỂN THỊ CAMERA -->
+    <video id="camera-feed" autoplay playsinline muted></video>
 
-    <!-- Thẻ Video nguồn phát ẩn (Khối 3) -->
-    <video 
-        id="ar-video" 
-        loop 
-        crossorigin="anonymous" 
-        playsinline 
-        webkit-playsinline 
-        muted 
-        style="display:none;">
-    </video>
-
-    <!-- Khung cảnh AR Duy Nhất (Khối 2 & Khối 3) -->
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
-        
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <!-- Nhóm đối tượng AR Target 0 -->
-        <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            
-            <!-- Màn hình phát Video 3D -->
-            <a-video 
-                src="#ar-video" 
-                width="1" 
-                height="0.5625" 
-                position="0 0 0.01">
-            </a-video>
-
-            <!-- Hiệu ứng khung viền 3D xoay nổi -->
-            <a-ring 
-                radius-inner="0.58" 
-                radius-outer="0.62" 
-                color="#00ffcc" 
-                material="side: double" 
-                position="0 0 0.02"
-                animation="property: rotation; to: 0 0 360; loop: true; dur: 4000; easing: linear">
-            </a-ring>
-
-            <!-- Chữ 3D hiển thị -->
-            <a-text 
-                value="AR VIDEO PLAYING" 
-                color="#00ffcc" 
-                align="center" 
-                position="0 -0.4 0.02" 
-                scale="0.3 0.3 0.3">
-            </a-text>
-
-        </a-entity>
-    </a-scene>
-
-    <!-- Logic Javascript hợp nhất toàn bộ 3 khối -->
+    <!-- LOGIC BẬT CAMERA SAU (FACINGMODE: ENVIRONMENT) -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const video = document.getElementById('ar-video');
-            const input = document.getElementById('v-input');
-            const btnSelect = document.getElementById('btn-select');
-            const btnAudio = document.getElementById('btn-audio');
-            const status = document.getElementById('status-bar');
-            const target = document.getElementById('target-entity');
-            const sceneEl = document.querySelector('#ar-scene');
+        document.addEventListener("DOMContentLoaded", function() {
+            const videoEl = document.getElementById('camera-feed');
+            const statusEl = document.getElementById('block1-status');
 
-            let isVideoLoaded = false;
+            // Cấu hình ưu tiên lấy Camera Sau của điện thoại
+            const constraints = {
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
 
-            // 1. Lắng nghe sự kiện Scene nạp xong (Khối 2)
-            sceneEl.addEventListener('loaded', () => {
-                status.innerText = "✅ AR SẴN SÀNG! Hãy chọn Video.";
-            });
-
-            // 2. Sự kiện chọn file Video từ bộ nhớ máy (Khối 3)
-            btnSelect.addEventListener('click', () => {
-                input.click();
-            });
-
-            input.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const videoURL = URL.createObjectURL(file);
-                    video.src = videoURL;
-                    video.load();
-                    video.muted = true; // Bắt buộc muted để tự chạy ngầm
-                    isVideoLoaded = true;
-                    status.innerText = "✅ Đã nạp Video! Hãy rọi Cam vào hình.";
-                }
-            });
-
-            // 3. Sự kiện Bật/Tắt Tiếng (Khối 3)
-            btnAudio.addEventListener('click', () => {
-                if (!isVideoLoaded) {
-                    alert("Bạn chưa chọn file Video!");
-                    return;
-                }
-
-                if (video.muted) {
-                    video.muted = false;
-                    btnAudio.innerText = "🔊 Tắt Tiếng";
-                    status.innerText = "🔊 Đang phát âm thanh...";
-                    video.play().catch(() => {});
-                } else {
-                    video.muted = true;
-                    btnAudio.innerText = "▶️ Mở Tiếng";
-                    status.innerText = "🔇 Đã tắt tiếng.";
-                }
-            });
-
-            // 4. Lắng nghe sự kiện nhận diện Target (Khối 2 & 3)
-            target.addEventListener("targetFound", () => { 
-                if (isVideoLoaded) {
-                    video.play().catch((err) => {
-                        console.log("Cần tương tác để phát video:", err);
-                    });
-                    status.innerText = "🎯 BẮT TRÚNG HÌNH! Đang phát...";
-                } else {
-                    status.innerText = "🎯 Đã bắt trúng hình! (Chưa chọn video)";
-                }
-            });
-            
-            target.addEventListener("targetLost", () => { 
-                if (isVideoLoaded) {
-                    video.pause();
-                }
-                status.innerText = "⚠️ Mất dấu - Rọi lại vào hình!";
-            });
+            // Kích hoạt luồng Camera
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    videoEl.srcObject = stream;
+                    statusEl.innerText = "🟢 [KHỐI 1] CAMERA SAU HOẠT ĐỘNG TỐT!";
+                    statusEl.style.borderColor = "#00ffcc";
+                    statusEl.style.color = "#00ffcc";
+                })
+                .catch(function(err) {
+                    console.error("Lỗi Camera Khối 1:", err);
+                    statusEl.innerText = "🔴 [KHỐI 1] LỖI BẬT CAM: " + err.message;
+                    statusEl.style.borderColor = "#ff3366";
+                    statusEl.style.color = "#ff3366";
+                });
         });
     </script>
+
 </body>
 </html>
