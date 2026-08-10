@@ -232,12 +232,20 @@
 
 
 
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3: Nút Bật/Tắt Chia Đôi VR</title>
+    <title>Khối 3: Bật/Tắt Bản Sao VR Chuẩn</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -253,15 +261,13 @@
             font-family: sans-serif;
         }
 
-        /* [KHỐI 3] BẢNG NÚT BẤM ĐIỀU KHIỂN */
+        /* [KHỐI 3] BẢNG NÚT BẤM VR */
         #block3-ui {
             position: fixed;
             bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 99999;
-            display: flex;
-            gap: 10px;
         }
 
         #btn-vr {
@@ -275,85 +281,148 @@
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
             -webkit-tap-highlight-color: transparent;
-            transition: all 0.2s ease;
         }
 
-        #btn-vr:active {
-            transform: scale(0.92);
+        /* KHUNG CHỨA MÀN HÌNH CHÍNH VÀ BẢN SAO */
+        #app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            position: relative;
         }
 
-        /* [KHỐI 3] CSS CHIA ĐÔI MÀN HÌNH BẰNG TỶ LỆ VIEWPORT */
-        body.split-vr-mode .a-canvas {
-            clip-path: inset(0 50% 0 0) !important; /* Tạo góc nhìn mắt trái */
+        /* Màn hình chính (Trái) */
+        #main-view {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: width 0.2s ease;
         }
 
-        body.split-vr-mode::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            right: 0;
+        /* Bản sao màn hình (Phải) */
+        #clone-view {
+            display: none;
             width: 50vw;
             height: 100vh;
-            background: inherit;
-            z-index: 2;
-            pointer-events: none;
-            border-left: 2px solid #00ffcc; /* Đường ranh giới giữa 2 mắt */
+            position: relative;
+            border-left: 2px solid #00ffcc;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #clone-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Khi bật VR -> Màn chính thu về 50%, Hiện bản sao 50% */
+        .vr-active #main-view {
+            width: 50vw !important;
+        }
+
+        .vr-active #clone-view {
+            display: block !important;
         }
     </style>
 </head>
 <body>
 
-    <!-- [KHỐI 3] NÚT BẤM CHUYỂN ĐỔI GIAO DIỆN -->
+    <!-- [KHỐI 3] NÚT BẤM -->
     <div id="block3-ui">
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
-    <!-- KHUNG CẢNH AR -->
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
+    <!-- KHUNG CHỨA HIỂN THỊ -->
+    <div id="app-container">
         
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <!-- MÀN HÌNH CHÍNH GỐC -->
+        <div id="main-view">
+            <a-scene 
+                id="ar-scene"
+                mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+                embedded
+                color-space="sRGB" 
+                renderer="colorManagement: true, physicallyCorrectLights"
+                vr-mode-ui="enabled: false"
+                device-orientation-permission-ui="enabled: false">
+                
+                <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
-                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-            </a-box>
-        </a-entity>
-    </a-scene>
+                <a-entity mindar-image-target="targetIndex: 0">
+                    <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
+                           animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+                    </a-box>
+                </a-entity>
+            </a-scene>
+        </div>
 
-    <!-- [KHỐI 3] LOGIC BẤM NÚT CHIA ĐÔI -->
+        <!-- BẢN SAO MÀN HÌNH (DÙNG CANVAS CLONE) -->
+        <div id="clone-view">
+            <canvas id="clone-canvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- [KHỐI 3] LOGIC BẢN SAO CANVAS -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
-            let isVRMode = false;
+            const container = document.getElementById("app-container");
+            const cloneCanvas = document.getElementById("clone-canvas");
+            const cloneCtx = cloneCanvas.getContext("2d");
 
+            let isVR = false;
+            let animationFrameId = null;
+
+            // Hàm render liên tục bản sao từ Canvas gốc sang Canvas bên phải
+            function renderClone() {
+                const sourceCanvas = document.querySelector(".a-canvas");
+                if (sourceCanvas && isVR) {
+                    if (cloneCanvas.width !== sourceCanvas.width) {
+                        cloneCanvas.width = sourceCanvas.width;
+                        cloneCanvas.height = sourceCanvas.height;
+                    }
+                    cloneCtx.drawImage(sourceCanvas, 0, 0);
+                }
+                if (isVR) {
+                    animationFrameId = requestAnimationFrame(renderClone);
+                }
+            }
+
+            // Xử lý sự kiện bấm nút
             btnVR.addEventListener("click", function () {
-                isVRMode = !isVRMode;
+                isVR = !isVR;
 
-                if (isVRMode) {
-                    // Bật chế độ chia đôi
-                    document.body.classList.add("split-vr-mode");
+                if (isVR) {
+                    container.classList.add("vr-active");
                     btnVR.innerText = "📱 Màn Hình Đơn";
                     btnVR.style.background = "#ff3366";
                     btnVR.style.borderColor = "#ff3366";
                     btnVR.style.color = "#fff";
+                    
+                    // Bắt đầu vẽ bản sao mượt mà theo từng khung hình
+                    renderClone();
                 } else {
-                    // Tắt chế độ chia đôi, quay về bình thường
-                    document.body.classList.remove("split-vr-mode");
+                    container.classList.remove("vr-active");
                     btnVR.innerText = "🥽 Bật Chia Đôi VR";
                     btnVR.style.background = "#00ffcc";
                     btnVR.style.borderColor = "#00ffcc";
                     btnVR.style.color = "#000";
+                    
+                    // Dừng luồng vẽ bản sao
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
                 }
+
+                // Cập nhật lại kích thước A-Frame Canvas
+                window.dispatchEvent(new Event('resize'));
             });
         });
     </script>
 
 </body>
 </html>
+ 
+
