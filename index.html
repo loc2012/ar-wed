@@ -102,9 +102,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 2: Nhận Diện Hình Ảnh Nhạy Cao</title>
+    <title>Khối 2: Siêu Nhạy 30%</title>
     
-    <!-- Nạp thư viện A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
@@ -119,103 +118,90 @@
             font-family: sans-serif;
         }
 
-        /* Thanh hiển thị trạng thái Khối 2 */
-        #block2-status {
+        /* BẢNG TRẠNG THÁI NHẬN ĐIỆN NHANH */
+        #status-bar {
             position: fixed;
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 99999;
+            z-index: 999999;
             background: rgba(0, 0, 0, 0.85);
-            color: #ffcc00;
-            padding: 12px 24px;
-            border-radius: 30px;
-            border: 2px solid #ffcc00;
-            font-size: 15px;
+            border: 2px solid #ff007f;
+            color: #ff007f;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
             font-weight: bold;
-            text-align: center;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+            box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
             pointer-events: none;
-            width: 85%;
-            max-width: 350px;
-            transition: all 0.2s ease-in-out;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
 
-    <!-- TRẠNG THÁI HIỂN THỊ KHỐI 2 -->
-    <div id="block2-status">⏳ [KHỐI 2] Đang nạp dữ liệu nhận diện...</div>
+    <div id="status-bar">🔍 DẠO CAMERA ĐỂ KÍCH HOẠT (30%)</div>
 
-    <!-- KHUNG CẢNH AR (TỐI ƯU ĐỘ NHẠY TỐI ĐA) -->
-    <!-- Mẹo tăng độ nhạy: filterMinCF: 0.0001, filterBeta: 0.001, missTolerance: 5 -->
+    <!-- SCENE KHỐI 2: ĐÃ TỐI ƯU CẤU HÌNH SIÊU NHẠY -->
     <a-scene 
-            <!-- KHUNG CẢNH AR (TỐI ƯU ĐỘ NHẠY VÀ THỜI GIAN CHỜ) -->
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no; warmupTolerance: 10; missTolerance: 10;" 
-        embedded
+        mindar-image="imageTargetSrc: ./targets.mind; 
+                      autoStart: true; 
+                      uiLoading: no; 
+                      uiScanning: no;
+                      filterMinCF: 0.0001; 
+                      filterBeta: 0.001; 
+                      missTolerance: 100;
+                      warmupTolerance: 1;" 
+        embedded 
         color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
-
+        vr-mode-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- VÙNG NHẬN DIỆN MẪU (Target Index: 0) -->
-        <a-entity mindar-image-target="targetIndex: 0" id="target-0">
+        <!-- VẬT THỂ KHỐI 2 BẬT LÊN KHI NHẬN HÌNH -->
+        <a-entity mindar-image-target="targetIndex: 0" id="k2-target">
             
-            <!-- Khung viền Neon màu đỏ xuất hiện khi bắt trúng hình -->
-            <a-ring 
-                radius-inner="0.45" 
-                radius-outer="0.5" 
-                color="#00ffcc" 
-                material="side: double" 
-                position="0 0 0.01"
-                animation="property: rotation; to: 0 0 360; loop: true; dur: 2000; easing: linear">
-            </a-ring>
+            <!-- Mô hình 3D đại diện (Khối Lập Phương 3 Màu Gốc Nổi Bật) -->
+            <a-box 
+                position="0 0 0.2" 
+                scale="0.8 0.8 0.8"
+                material="color: #00ffcc; wireframe: false"
+                animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+            </a-box>
 
-            <a-circle color="#00ffcc" radius="0.08" position="0 0 0.01"></a-circle>
-
+            <!-- Vòng hào quang xung quanh -->
+            <a-ring radius-inner="0.6" radius-outer="0.68" color="#ff007f" position="0 0 0"></a-ring>
+            
         </a-entity>
     </a-scene>
 
-    <!-- LOGIC NHẬN DIỆN KHỐI 2 -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const statusEl = document.getElementById("block2-status");
-            const sceneEl = document.querySelector("#ar-scene");
-            const targetEl = document.getElementById("target-0");
+            const statusBar = document.getElementById("status-bar");
+            const target = document.getElementById("k2-target");
 
-            // 1. Khi dữ liệu AR nạp xong
-            sceneEl.addEventListener("loaded", function () {
-                statusEl.innerText = "❌ KHÔNG THẤY (Đang quét...)";
-                statusEl.style.borderColor = "#ff3366";
-                statusEl.style.color = "#ff3366";
-                statusEl.style.boxShadow = "0 0 15px rgba(255, 51, 102, 0.4)";
+            // BẮT SỰ KIỆN KHI CAMERA NHẬN DẠNG ĐƯỢC (DÙ CHỈ MỚI HƠI GIỐNG 30%)
+            target.addEventListener("targetFound", () => {
+                statusBar.innerText = "⚡ ĐÃ BẮT TRÚNG KHỐI 2!";
+                statusBar.style.borderColor = "#00ffcc";
+                statusBar.style.color = "#00ffcc";
+                statusBar.style.boxShadow = "0 0 12px rgba(0, 255, 204, 0.8)";
             });
 
-            // 2. KHI TÌM THẤY HÌNH (SO SÁNH KHỚP VỚI TARGETS.MIND)
-            targetEl.addEventListener("targetFound", function () {
-                statusEl.innerText = "🟢 OK! ĐÃ THẤY HÌNH MẪU";
-                statusEl.style.borderColor = "#00ffcc";
-                statusEl.style.color = "#00ffcc";
-                statusEl.style.boxShadow = "0 0 20px rgba(0, 255, 204, 0.8)";
-            });
-
-            // 3. KHI MẤT DẤU HÌNH
-            targetEl.addEventListener("targetLost", function () {
-                statusEl.innerText = "❌ KHÔNG THẤY";
-                statusEl.style.borderColor = "#ff3366";
-                statusEl.style.color = "#ff3366";
-                statusEl.style.boxShadow = "0 0 15px rgba(255, 51, 102, 0.4)";
+            // KHI BỊ MẤT DẤU HÌNH
+            target.addEventListener("targetLost", () => {
+                statusBar.innerText = "🔍 ĐANG QUÉT TÌM KHỐI 2...";
+                statusBar.style.borderColor = "#ff007f";
+                statusBar.style.color = "#ff007f";
+                statusBar.style.boxShadow = "0 0 12px rgba(255, 0, 127, 0.5)";
             });
         });
     </script>
 
 </body>
 </html>
+
 
 
 
