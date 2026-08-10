@@ -302,7 +302,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3: Core Tracking (Chống Tranh Cam)</title>
+    <title>Khối 3: Core Tracking & Local Video Input</title>
     <style>
         html, body {
             margin: 0; padding: 0;
@@ -311,10 +311,10 @@
             font-family: sans-serif;
         }
 
-        /* Cam phụ & Video nguồn chạy ẩn */
-        #raw-video { display: none; }
+        /* Input chọn video ẩn ngầm */
+        #video-file-input, #raw-video { display: none; }
 
-        /* CANVAS HỢP NHẤT KHỐI 3 (ĐẦU RA CHO KHỐI 2) */
+        /* CANVAS HỢP NHẤT KHỐI 3 */
         #khoi3-output-canvas {
             width: 100vw;
             height: 100vh;
@@ -322,7 +322,7 @@
             display: block;
         }
 
-        /* UI PANEL PANEL DƯỚI MÀN HÌNH */
+        /* THANH ĐIỀU CHỈNH & NÚT CHỌN VIDEO */
         #ui-panel {
             position: fixed;
             bottom: 20px; left: 50%;
@@ -348,77 +348,92 @@
             cursor: pointer;
         }
 
-        #btn-download {
-            background: #00ffcc; color: #000;
-            border: none; padding: 5px 10px;
-            border-radius: 12px; font-weight: bold; font-size: 11px;
+        /* NÚT CHỌN VIDEO TỪ MÁY */
+        #btn-select-video {
+            background: #00ffcc; 
+            color: #000;
+            border: none; 
+            padding: 6px 12px;
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 11px;
             cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        #btn-select-video:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
 <body>
 
     <div id="ui-panel">
-        <span id="status-text">🔍 ĐANG LẤY CAM KHỐI 1...</span>
+        <span id="status-text">🔍 ĐANG TÌM ĐÈN...</span>
         <span>| Zoom:</span>
         <input type="range" id="size-slider" min="0.5" max="4.0" step="0.1" value="1.5">
-        <button id="btn-download">💾 Tải khoi3.html</button>
+        
+        <!-- NÚT CHỌN VIDEO TỪ ĐIỆN THOẠI/MÁY TÍNH -->
+        <button id="btn-select-video">🎬 Chọn Video Từ Máy</button>
+        <input type="file" id="video-file-input" accept="video/*">
     </div>
 
-    <!-- VIDEO NGUỒN ĐỂ ĐÈ LÊN ĐÈN -->
+    <!-- VIDEO NGUỒN CHẠY ẨN (MẶC ĐỊNH LÀ LINK MẪU, KHI CHỌN FILE SẼ THAY THẾ) -->
     <video id="raw-video" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" autoplay loop muted playsinline></video>
 
     <!-- CANVAS ĐẦU RA CỦA KHỐI 3 -->
     <canvas id="khoi3-output-canvas"></canvas>
 
     <script>
-        let webcamElement = null; // Sẽ tự động liên kết với Cam của Khối 1
+        let webcamElement = null; // Tự liên kết Cam Khối 1
         const sourceVideo = document.getElementById('raw-video');
         const canvas = document.getElementById('khoi3-output-canvas');
         const ctx = canvas.getContext('2d');
         const slider = document.getElementById('size-slider');
         const statusText = document.getElementById('status-text');
-        const btnDownload = document.getElementById('btn-download');
+        
+        const btnSelectVideo = document.getElementById('btn-select-video');
+        const fileInput = document.getElementById('video-file-input');
 
-        // NÚT TẢI FILE KHOI3
-        btnDownload.addEventListener('click', () => {
-            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'khoi3.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        // SỰ KIỆN CHỌN VIDEO TỪ BỘ NHỚ MÁY
+        btnSelectVideo.addEventListener('click', () => {
+            fileInput.click(); // Mở cửa sổ chọn file của điện thoại/máy tính
         });
 
-        // TỰ ĐỘNG TÌM VÀ DÙNG CHUNG CAM CỦA KHỐI 1 (KHÔNG TỰ BẬT CAM NỮA)
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const videoURL = URL.createObjectURL(file);
+                sourceVideo.src = videoURL;
+                sourceVideo.play();
+                statusText.innerText = "✅ ĐÃ TẢI VIDEO MỚI!";
+                statusText.style.color = "#00ffcc";
+            }
+        });
+
+        // TỰ ĐỘNG DÙNG CHUNG CAM CỦA KHỐI 1
         function findAndShareCamera() {
-            // Tìm thẻ <video> đang phát của Khối 1 trên trang
             const allVideos = document.querySelectorAll('video');
             for (let vid of allVideos) {
                 if (vid.id !== 'raw-video' && (vid.srcObject || vid.currentTime > 0)) {
                     webcamElement = vid;
-                    statusText.innerText = "✅ ĐÃ KẾT NỐI CAM KHỐI 1";
                     return true;
                 }
             }
             return false;
         }
 
-        // VÒNG LẶP PHÂN TÍCH VÀ ĐÈ VIDEO (KHỐI 3)
+        // VÒNG LẶP XỬ LÝ KHỐI 3
         function processKhoi3() {
             if (!webcamElement) {
-                findAndShareCamera(); // Tìm Cam Khối 1 nếu chưa thấy
+                findAndShareCamera();
             }
 
             if (webcamElement && webcamElement.readyState >= 2) {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
 
-                // 1. Lấy khung hình từ Cam Khối 1 vẽ lên Canvas Khối 3
+                // 1. Lấy khung hình Cam Khối 1
                 ctx.save();
                 ctx.scale(-1, 1);
                 ctx.drawImage(webcamElement, -canvas.width, 0, canvas.width, canvas.height);
@@ -444,7 +459,7 @@
                     }
                 }
 
-                // 3. Đè Video vào đúng điểm màu Xanh
+                // 3. Đè Video đã chọn vào đúng điểm Đèn Xanh
                 if (count > 3) {
                     let avgX = sumX / count;
                     let avgY = sumY / count;
@@ -474,8 +489,8 @@
             requestAnimationFrame(processKhoi3);
         }
 
-        // Bắt đầu vòng lặp xử lý
         requestAnimationFrame(processKhoi3);
     </script>
 </body>
 </html>
+
