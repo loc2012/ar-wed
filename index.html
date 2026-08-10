@@ -1,4 +1,4 @@
-p(<!DOCTYPE html>
+9p(<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -421,7 +421,7 @@ p(<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Video 360 Xoay Chuẩn</title>
+    <title>Khối 4: Test Video 360° Thực Sự</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
@@ -442,6 +442,10 @@ p(<!DOCTYPE html>
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
         }
 
         .ui-btn {
@@ -463,29 +467,28 @@ p(<!DOCTYPE html>
 <body>
 
     <div id="block4-ui">
-        <button class="ui-btn" id="btn-upload">📂 Chọn Video Để Xoay 360°</button>
+        <button class="ui-btn" id="btn-upload">📂 Chọn Video Để Phát 360°</button>
         <input type="file" id="file-input" accept="video/*">
     </div>
 
-    <!-- Video ẩn dùng làm thẻ nguồn -->
-    <video id="local-video" loop playsinline webkit-playsinline crossorigin="anonymous" style="display:none;"></video>
+    <!-- Thẻ Video ẩn làm thẻ nguồn -->
+    <video id="my-video" loop playsinline webkit-playsinline muted autoplay style="display:none;"></video>
 
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: true"></a-camera>
 
-        <!-- KHỐI VIDEO 360 THẢ TRỰC TIẾP TRƯỚC MẶT ĐỂ TEST (KHÔNG CẦN QUÉT TARGET) -->
-        <a-entity id="video-container" position="0 0 -2">
-            <!-- Khung hình trụ uốn cong 360 xoay liên tục -->
+        <!-- KHỐI KHUNG HÌNH TRỤ 360 CHỨA VIDEO -->
+        <!-- Đặt tại position="0 0 -2.5" ngay trước mặt người xem -->
+        <a-entity id="video-wrapper" position="0 0 -2.5">
             <a-cylinder 
                 id="video-mesh"
-                position="0 0 0" 
-                radius="1.2" 
-                height="1.2" 
+                radius="1.8" 
+                height="1.5" 
                 open-ended="true" 
                 side="double"
-                material="shader: flat; src: #local-video; side: double"
-                animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear">
+                rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
             </a-cylinder>
         </a-entity>
 
@@ -495,7 +498,7 @@ p(<!DOCTYPE html>
         document.addEventListener("DOMContentLoaded", function () {
             const btnUpload = document.getElementById("btn-upload");
             const fileInput = document.getElementById("file-input");
-            const video = document.getElementById("local-video");
+            const video = document.getElementById("my-video");
             const videoMesh = document.getElementById("video-mesh");
 
             btnUpload.addEventListener("click", () => fileInput.click());
@@ -504,15 +507,43 @@ p(<!DOCTYPE html>
                 const file = e.target.files[0];
                 if (file) {
                     const videoURL = URL.createObjectURL(file);
-                    video.src = videoURL;
-                    video.play();
-
-                    // Cập nhật lại Texture cho WebGL
-                    videoMesh.setAttribute('material', 'src', '#local-video');
                     
-                    btnUpload.innerText = "🎬 Đang Xoay Video 360°";
-                    btnUpload.style.background = "#ff007f";
-                    btnUpload.style.color = "#fff";
+                    video.src = videoURL;
+                    video.muted = true; // Bắt buộc muted để Android cho phép autoplay
+
+                    video.play().then(() => {
+                        // Ép A-Frame tạo Texture từ video vừa chọn
+                        const THREE = window.THREE;
+                        const texture = new THREE.VideoTexture(video);
+                        texture.minFilter = THREE.LinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        texture.format = THREE.RGBAFormat;
+
+                        const material = new THREE.MeshBasicMaterial({
+                            map: texture,
+                            side: THREE.DoubleSide
+                        });
+
+                        // Gán trực tiếp Mesh Material 3D
+                        const mesh = videoMesh.getObject3D('mesh');
+                        if (mesh) {
+                            mesh.material = material;
+                        }
+
+                        btnUpload.innerText = "▶️ Bật Tiếng Video";
+                        btnUpload.style.background = "#ff007f";
+                        btnUpload.style.color = "#fff";
+                    }).catch(err => {
+                        alert("Lỗi phát video: " + err);
+                    });
+                }
+            });
+
+            // Nhấp nút bật tiếng
+            btnUpload.addEventListener("click", function() {
+                if(video.src && video.muted) {
+                    video.muted = false;
+                    btnUpload.innerText = "🎬 Đang Xoay Video 360° (Có Tiếng)";
                 }
             });
         });
