@@ -418,7 +418,6 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -426,6 +425,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Video 3D Góc Nghiêng 45 Độ</title>
     
+    <!-- CHỈ DÙNG AFRAME, BỎ HOÀN TOÀN MINDAR ĐỂ KHÔNG BỊ BẮT QUÉT ẢNH -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
     <style>
@@ -439,61 +439,61 @@
             font-family: sans-serif;
         }
 
-        /* NÚT CHẠY / BẬT TIẾNG DUY NHẤT TRÊN MÀN HÌNH */
         #play-btn {
             position: fixed;
-            bottom: 20px;
+            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
-            background: #ff007f;
-            color: #fff;
+            background: #00ffcc;
+            color: #000;
             border: none;
             padding: 12px 24px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.5);
             -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
 <body>
 
-    <!-- NÚT MỞ VIDEO / BẬT TIẾNG -->
-    <button id="play-btn">▶️ BẮT ĐẦU PHÁT VIDEO</button>
+    <button id="play-btn">🎬 ĐANG PHÁT (GÓC NGHIÊNG 45°)</button>
 
+    <!-- SCENE THƯỜNG - KHÔNG CÓ THẦN THÁNH TẢI TARGET NÀO CẢ -->
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         
         <a-assets>
-            <!-- Link video MP4 mẫu load trực tiếp cực nhanh -->
             <video id="auto-video" 
                    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
                    preload="auto" 
                    loop="true" 
                    crossorigin="anonymous" 
                    playsinline 
-                   webkit-playsinline>
+                   webkit-playsinline 
+                   autoplay 
+                   muted>
             </video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- KHỐI MÀN HÌNH NẰM NGHIÊNG GÓC 45 ĐỘ (TẠO HIỆU ỨNG BÊN TO BÊN NHỎ) -->
-        <a-entity position="0 0 -2" rotation="0 45 0">
+        <!-- ĐẶT MÀN HÌNH VIDEO NGAY TRƯỚC MẮT (position -1.8) VÀ XOAY NGHIÊNG 45 ĐỘ -->
+        <a-entity position="0 0 -1.8" rotation="0 45 0">
             
-            <!-- Màn hình chiếu video -->
+            <!-- Tấm bảng video -->
             <a-plane 
                 src="#auto-video"
-                width="2.2" 
-                height="1.25" 
+                width="2" 
+                height="1.15" 
                 position="0 0 0"
                 material="shader: flat; side: double;">
             </a-plane>
 
-            <!-- Khung viền Neon nổi bật 3D -->
-            <a-ring radius-inner="1.15" radius-outer="1.2" color="#00ffcc" position="0 0 -0.01"></a-ring>
+            <!-- Viền sáng neon để nhìn rõ hình 3D trong không gian -->
+            <a-ring radius-inner="1.0" radius-outer="1.05" color="#00ffcc" position="0 0 -0.01"></a-ring>
             
         </a-entity>
 
@@ -504,19 +504,20 @@
             const playBtn = document.getElementById("play-btn");
             const video = document.getElementById("auto-video");
 
-            // Chỉ cần chạm nhẹ màn hình/nút 1 lần duy nhất là video phát có tiếng ngay
+            // Tự động play video ngay
+            video.play().catch(() => {});
+
             playBtn.addEventListener("click", function () {
-                if (video.paused) {
-                    video.play();
-                    playBtn.innerText = "🎬 Đang Phát (Góc Nghiêng 45°)";
-                    playBtn.style.background = "#00ffcc";
-                    playBtn.style.color = "#000";
-                } else {
-                    // Nếu bấm lần nữa thì tạm dừng
-                    video.pause();
-                    playBtn.innerText = "⏸️ Tạm Dừng";
+                if (video.muted) {
+                    video.muted = false;
+                    playBtn.innerText = "🔊 ĐÃ MỞ TIẾNG";
                     playBtn.style.background = "#ff007f";
                     playBtn.style.color = "#fff";
+                } else {
+                    video.muted = true;
+                    playBtn.innerText = "🔇 ĐÃ TẮT TIẾNG";
+                    playBtn.style.background = "#00ffcc";
+                    playBtn.style.color = "#000";
                 }
             });
         });
