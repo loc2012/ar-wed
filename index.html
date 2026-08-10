@@ -97,12 +97,12 @@
 
 
 
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 2: Siêu Nhạy 30%</title>
+    <title>Khối 2: Siêu Nhạy & Chống Rung Video</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -118,7 +118,7 @@
             font-family: sans-serif;
         }
 
-        /* BẢNG TRẠNG THÁI NHẬN ĐIỆN NHANH */
+        /* THANH THÔNG BÁO TRẠNG THÁI REALTIME */
         #status-bar {
             position: fixed;
             top: 15px;
@@ -126,13 +126,13 @@
             transform: translateX(-50%);
             z-index: 999999;
             background: rgba(0, 0, 0, 0.85);
-            border: 2px solid #ff007f;
-            color: #ff007f;
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
             padding: 8px 18px;
             border-radius: 20px;
             font-size: 13px;
             font-weight: bold;
-            box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
+            box-shadow: 0 0 12px rgba(0, 255, 204, 0.5);
             pointer-events: none;
             white-space: nowrap;
         }
@@ -140,38 +140,52 @@
 </head>
 <body>
 
-    <div id="status-bar">🔍 DẠO CAMERA ĐỂ KÍCH HOẠT (30%)</div>
+    <div id="status-bar">🔍 DẠO CAMERA ĐỂ KÍCH HOẠT...</div>
 
-    <!-- SCENE KHỐI 2: ĐÃ TỐI ƯU CẤU HÌNH SIÊU NHẠY -->
+    <!-- SCENE AR - ÉP CẤU HÌNH SIÊU NHẠY VÀ CHỊU GÓC NGHIÊNG CỰC ĐẠI -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; 
                       autoStart: true; 
                       uiLoading: no; 
                       uiScanning: no;
-                      filterMinCF: 0.0001; 
+                      filterMinCF: 0.0000001; 
                       filterBeta: 0.001; 
-                      missTolerance: 100;
+                      missTolerance: 1000;
                       warmupTolerance: 1;" 
         embedded 
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
         vr-mode-ui="enabled: false">
         
+        <a-assets>
+            <!-- Link video phát sẵn (Có thể thay bằng file local hoặc link video của bạn) -->
+            <video id="k2-video" 
+                   src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
+                   preload="auto" 
+                   loop="true" 
+                   crossorigin="anonymous" 
+                   playsinline 
+                   webkit-playsinline 
+                   muted>
+            </video>
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- VẬT THỂ KHỐI 2 BẬT LÊN KHI NHẬN HÌNH -->
+        <!-- TARGET ENTITY -->
         <a-entity mindar-image-target="targetIndex: 0" id="k2-target">
             
-            <!-- Mô hình 3D đại diện (Khối Lập Phương 3 Màu Gốc Nổi Bật) -->
-            <a-box 
-                position="0 0 0.2" 
-                scale="0.8 0.8 0.8"
-                material="color: #00ffcc; wireframe: false"
-                animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-            </a-box>
+            <!-- TẤM BẢNG VIDEO PHÁT NGAY TRÊN HÌNH TARGET -->
+            <a-plane 
+                id="k2-video-plane"
+                src="#k2-video"
+                width="1.6" 
+                height="0.9" 
+                position="0 0 0.05"
+                material="shader: flat; side: double;">
+            </a-plane>
 
-            <!-- Vòng hào quang xung quanh -->
-            <a-ring radius-inner="0.6" radius-outer="0.68" color="#ff007f" position="0 0 0"></a-ring>
+            <!-- Viền Neon phản quang bao quanh -->
+            <a-ring radius-inner="0.82" radius-outer="0.86" color="#00ffcc" position="0 0 0.04"></a-ring>
             
         </a-entity>
     </a-scene>
@@ -180,28 +194,49 @@
         document.addEventListener("DOMContentLoaded", function () {
             const statusBar = document.getElementById("status-bar");
             const target = document.getElementById("k2-target");
+            const video = document.getElementById("k2-video");
 
-            // BẮT SỰ KIỆN KHI CAMERA NHẬN DẠNG ĐƯỢC (DÙ CHỈ MỚI HƠI GIỐNG 30%)
+            let lostTimer = null; // Biến đếm ngược thời gian chờ 3.5 giây
+
+            // 1. KHI PHÁT HIỆN HÌNH (DÙ NGHIÊNG LỚN HAY HƠI GIỐNG)
             target.addEventListener("targetFound", () => {
-                statusBar.innerText = "⚡ ĐÃ BẮT TRÚNG KHỐI 2!";
+                // Nếu đang trong thời gian đếm ngược 3.5s mà quét lại trúng -> HỦY NGAY LỆNH TẮT!
+                if (lostTimer) {
+                    clearTimeout(lostTimer);
+                    lostTimer = null;
+                }
+
+                // Giữ nguyên video phát bình thường
+                video.play().catch(() => {});
+                
+                statusBar.innerText = "⚡ BẮT DẤU TỐT (GIỮ VIDEO)";
                 statusBar.style.borderColor = "#00ffcc";
                 statusBar.style.color = "#00ffcc";
                 statusBar.style.boxShadow = "0 0 12px rgba(0, 255, 204, 0.8)";
             });
 
-            // KHI BỊ MẤT DẤU HÌNH
+            // 2. KHI MẤT DẤU / RUNG TAY / LỆCH CAMERA
             target.addEventListener("targetLost", () => {
-                statusBar.innerText = "🔍 ĐANG QUÉT TÌM KHỐI 2...";
-                statusBar.style.borderColor = "#ff007f";
-                statusBar.style.color = "#ff007f";
-                statusBar.style.boxShadow = "0 0 12px rgba(255, 0, 127, 0.5)";
+                statusBar.innerText = "⏳ CHỐNG RUNG: GIỮ VIDEO 3.5S...";
+                statusBar.style.borderColor = "#ffcc00";
+                statusBar.style.color = "#ffcc00";
+
+                // Bắt đầu đếm lùi đúng 3.5 giây (3500 mili giây)
+                lostTimer = setTimeout(() => {
+                    // Sau 3.5s vẫn không thấy hình thì mới thực sự dừng video
+                    video.pause();
+                    
+                    statusBar.innerText = "🔍 ĐANG QUÉT TÌM HÌNH...";
+                    statusBar.style.borderColor = "#ff007f";
+                    statusBar.style.color = "#ff007f";
+                    statusBar.style.boxShadow = "0 0 12px rgba(255, 0, 127, 0.5)";
+                }, 3500); 
             });
         });
     </script>
 
 </body>
 </html>
-
 
 
 
