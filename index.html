@@ -491,12 +491,15 @@
 
 
 
+
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Fix Lỗi Đè Nút Tải Video</title>
+    <title>Khối 4: Sửa Lỗi Chọn File Video</title>
     <style>
         html, body {
             margin: 0; padding: 0;
@@ -505,7 +508,7 @@
             font-family: sans-serif;
         }
 
-        #khoi4-file-input, #khoi4-video { display: none; }
+        #khoi4-video { display: none; }
 
         #main-canvas {
             width: 100vw;
@@ -514,13 +517,13 @@
             display: block;
         }
 
-        /* 🛠️ BẢNG KHỐI 4 ĐƯỢC ĐẨY LÊN CAO (bottom: 85px) ĐỂ KHÔNG BỊ ĐÈ */
+        /* BẢNG ĐIỀU KHIỂN ĐẨY LÊN CAO - TRÁNH BỊ CHE */
         #khoi4-control-panel {
             position: fixed;
-            bottom: 85px; /* Đô cao tách biệt hoàn toàn với dàn nút VR ở đáy */
+            bottom: 90px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10000; /* Ưu tiên cao nhất để nhận lực chạm tay */
+            z-index: 99999; /* Ưu tiên cao nhất */
             background: rgba(0, 0, 0, 0.9);
             border: 2px solid #00ffcc;
             padding: 8px 16px;
@@ -535,22 +538,28 @@
             white-space: nowrap;
         }
 
-        /* NÚT TẢI VIDEO ĐƯỢC TỐI ƯU CẢM ỨNG */
-        #btn-upload-video {
+        /* 🚀 NÚT NẠP FILE TRỰC TIẾP DÙNG THẺ LABEL (BẤM LÀ MỞ MÁY NGAY) */
+        .btn-file-label {
             background: #00ffcc;
             color: #000;
-            border: none;
             padding: 8px 16px;
             border-radius: 18px;
             font-weight: bold;
             font-size: 12px;
             cursor: pointer;
-            outline: none;
+            display: inline-block;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        #btn-upload-video:active {
+        .btn-file-label:active {
             transform: scale(0.92);
             background: #ffffff;
+        }
+
+        /* Ẩn thẻ input thực sự đi, chỉ dùng Label kích hoạt */
+        #khoi4-file-input {
+            display: none !important;
         }
 
         #video-size-slider {
@@ -562,9 +571,10 @@
 </head>
 <body>
 
-    <!-- BẢNG KHỐI 4 TẢI VIDEO (NẰM Ở TẦNG TRÊN) -->
+    <!-- BẢNG KHỐI 4 TẢI VIDEO -->
     <div id="khoi4-control-panel">
-        <button id="btn-upload-video" type="button">🎬 TẢI VIDEO LÊN</button>
+        <!-- Dùng Thẻ LABEL thay cho BUTTON để vượt rào bảo mật Android/iOS -->
+        <label for="khoi4-file-input" class="btn-file-label">🎬 TẢI VIDEO LÊN</label>
         <input type="file" id="khoi4-file-input" accept="video/*">
 
         <span>Cỡ:</span>
@@ -585,21 +595,15 @@
 
         const videoElement = document.getElementById('khoi4-video');
         const fileInput = document.getElementById('khoi4-file-input');
-        const btnUpload = document.getElementById('btn-upload-video');
         const sizeSlider = document.getElementById('video-size-slider');
         const statusText = document.getElementById('khoi4-status');
 
         let isVideoLoaded = false;
 
-        // 🛠️ XỬ LÝ SỰ KIỆN NÚT CHỌN FILE VIDEO (SỬA LỖI KHÔNG BẤM ĐƯỢC)
-        btnUpload.addEventListener('click', (e) => {
-            e.stopPropagation(); // Ngăn sự kiện chạm bị lan ra các khối khác
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
+        // 🛠️ LẮNG NGHE SỰ KIỆN CHỌN FILE VIDEO (TRỰC TIẾP 100%)
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
                 const videoURL = URL.createObjectURL(file);
                 videoElement.src = videoURL;
                 videoElement.play();
@@ -696,3 +700,4 @@
     </script>
 </body>
 </html>
+  
