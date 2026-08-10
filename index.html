@@ -1,593 +1,220 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
-    <title>AR Video - MindAR</title>
-
+    <title>AR Pro - Tổng Hợp 3 Khối Logic</title>
+    
+    <!-- Thư viện A-Frame và MindAR chuẩn -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #000;
+            background-color: #000;
+            font-family: sans-serif;
         }
 
-        a-scene {
-            position: fixed !important;
-            left: 0;
-            top: 0;
-            width: 100vw !important;
-            height: 100vh !important;
-        }
-
-        #instruction {
+        /* Khối 1: Thanh trạng thái thông báo */
+        #status-bar {
             position: fixed;
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-
             z-index: 99999;
-
-            padding: 9px 16px;
-
+            background: rgba(0, 0, 0, 0.8);
             color: #00ffcc;
-            background: rgba(0, 0, 0, 0.75);
-
+            padding: 10px 20px;
+            border-radius: 20px;
             border: 1px solid #00ffcc;
-            border-radius: 22px;
-
-            font-family: Arial, sans-serif;
             font-size: 13px;
-
-            white-space: nowrap;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            pointer-events: none;
+            width: 80%;
+            max-width: 320px;
         }
 
-        #controls {
+        /* Khối 3: Bảng điều khiển nút bấm */
+        #ui-controls {
             position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 20px;
-
-            z-index: 100000;
-
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
             display: flex;
-            justify-content: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         button {
-            padding: 12px 16px;
-
-            border: 1px solid #00ffcc;
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 12px 18px;
             border-radius: 25px;
-
-            background: rgba(0, 0, 0, 0.85);
-            color: #00ffcc;
-
-            font-size: 14px;
             font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            -webkit-tap-highlight-color: transparent;
         }
 
-        #video-file {
-            display: none;
+        button:active {
+            transform: scale(0.95);
         }
 
-        #ar-video {
+        #v-input {
             display: none;
         }
     </style>
 </head>
-
 <body>
 
-    <div id="instruction">
-        📸 Đang khởi động camera...
+    <!-- UI Trạng thái (Khối 1 & 2) -->
+    <div id="status-bar">📹 Đang khởi tạo Camera & AR...</div>
+
+    <!-- UI Nút bấm chọn Video/Bật tiếng (Khối 3) -->
+    <div id="ui-controls">
+        <button id="btn-select">📂 Chọn Video</button>
+        <button id="btn-audio">▶️ Mở Tiếng</button>
+        <input type="file" id="v-input" accept="video/*">
     </div>
 
-    <div id="controls">
-
-        <input
-            id="video-file"
-            type="file"
-            accept="video/mp4,video/*">
-
-        <button id="camera-button">
-            📷 Mở Camera
-        </button>
-
-        <button id="choose-video">
-            📂 Chọn Video
-        </button>
-
-        <button id="sound-button">
-            🔊 Bật Tiếng
-        </button>
-
-    </div>
-
-    <video
-        id="ar-video"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-        crossorigin="anonymous"
-        preload="auto"
+    <!-- Thẻ Video nguồn phát ẩn (Khối 3) -->
+    <video 
+        id="ar-video" 
+        loop 
+        crossorigin="anonymous" 
+        playsinline 
+        webkit-playsinline 
+        muted 
         style="display:none;">
     </video>
 
-
-    <a-scene
+    <!-- Khung cảnh AR Duy Nhất (Khối 2 & Khối 3) -->
+    <a-scene 
         id="ar-scene"
-
-        mindar-image="
-            imageTargetSrc: ./targets.mind;
-            autoStart: true;
-            uiLoading: no;
-            uiScanning: no;
-        "
-
-        color-space="sRGB"
-
-        renderer="
-            colorManagement: true;
-            physicallyCorrectLights;
-            antialias: true;
-        "
-
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+        embedded
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights"
         vr-mode-ui="enabled: false"
-
         device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-camera
-            position="0 0 0"
-            look-controls="enabled: false">
-        </a-camera>
-
-
-        <a-entity
-            id="image-target"
-            mindar-image-target="targetIndex: 0">
-
-
-            <!-- VIDEO BÁM TRỰC TIẾP LÊN TARGET -->
-
-            <a-video
-                id="ar-video-plane"
-                src="#ar-video"
-                width="1"
-                height="0.5625"
-                position="0 0 0.01"
-                rotation="0 0 0"
-                material="
-                    shader: flat;
-                    side: double;
-                ">
+        <!-- Nhóm đối tượng AR Target 0 -->
+        <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
+            
+            <!-- Màn hình phát Video 3D -->
+            <a-video 
+                src="#ar-video" 
+                width="1" 
+                height="0.5625" 
+                position="0 0 0.01">
             </a-video>
 
-
-            <!-- VÒNG TRANG TRÍ -->
-
-            <a-ring
-                color="#00ffcc"
-                radius-inner="0.57"
-                radius-outer="0.59"
+            <!-- Hiệu ứng khung viền 3D xoay nổi -->
+            <a-ring 
+                radius-inner="0.58" 
+                radius-outer="0.62" 
+                color="#00ffcc" 
+                material="side: double" 
                 position="0 0 0.02"
-                material="
-                    shader: flat;
-                    transparent: true;
-                    opacity: 0.9;
-                "
-                animation="
-                    property: rotation;
-                    to: 0 0 360;
-                    loop: true;
-                    dur: 4000;
-                    easing: linear;
-                ">
+                animation="property: rotation; to: 0 0 360; loop: true; dur: 4000; easing: linear">
             </a-ring>
 
-        </a-entity>
+            <!-- Chữ 3D hiển thị -->
+            <a-text 
+                value="AR VIDEO PLAYING" 
+                color="#00ffcc" 
+                align="center" 
+                position="0 -0.4 0.02" 
+                scale="0.3 0.3 0.3">
+            </a-text>
 
+        </a-entity>
     </a-scene>
 
-
+    <!-- Logic Javascript hợp nhất toàn bộ 3 khối -->
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const video = document.getElementById('ar-video');
+            const input = document.getElementById('v-input');
+            const btnSelect = document.getElementById('btn-select');
+            const btnAudio = document.getElementById('btn-audio');
+            const status = document.getElementById('status-bar');
+            const target = document.getElementById('target-entity');
+            const sceneEl = document.querySelector('#ar-scene');
 
-        const scene =
-            document.getElementById("ar-scene");
+            let isVideoLoaded = false;
 
-        const video =
-            document.getElementById("ar-video");
+            // 1. Lắng nghe sự kiện Scene nạp xong (Khối 2)
+            sceneEl.addEventListener('loaded', () => {
+                status.innerText = "✅ AR SẴN SÀNG! Hãy chọn Video.";
+            });
 
-        const target =
-            document.getElementById("image-target");
+            // 2. Sự kiện chọn file Video từ bộ nhớ máy (Khối 3)
+            btnSelect.addEventListener('click', () => {
+                input.click();
+            });
 
-        const instruction =
-            document.getElementById("instruction");
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const videoURL = URL.createObjectURL(file);
+                    video.src = videoURL;
+                    video.load();
+                    video.muted = true; // Bắt buộc muted để tự chạy ngầm
+                    isVideoLoaded = true;
+                    status.innerText = "✅ Đã nạp Video! Hãy rọi Cam vào hình.";
+                }
+            });
 
-        const cameraButton =
-            document.getElementById("camera-button");
-
-        const chooseButton =
-            document.getElementById("choose-video");
-
-        const videoFile =
-            document.getElementById("video-file");
-
-        const soundButton =
-            document.getElementById("sound-button");
-
-
-        let videoURL = null;
-
-        let targetFound = false;
-
-        let mindarStarted = false;
-
-
-        /*
-         * ==========================================
-         * KIỂM TRA TRÌNH DUYỆT
-         * ==========================================
-         */
-
-        function checkCameraSupport() {
-
-            if (!navigator.mediaDevices ||
-                !navigator.mediaDevices.getUserMedia) {
-
-                instruction.textContent =
-                    "❌ Trình duyệt không hỗ trợ camera";
-
-                return false;
-            }
-
-            return true;
-        }
-
-
-        /*
-         * ==========================================
-         * KHỞI ĐỘNG MINDAR
-         * ==========================================
-         */
-
-        async function startAR() {
-
-            if (mindarStarted) {
-                return;
-            }
-
-            if (!checkCameraSupport()) {
-                return;
-            }
-
-            instruction.textContent =
-                "📷 Đang mở camera...";
-
-            try {
-
-                const mindar =
-                    scene.components["mindar-image"];
-
-                if (!mindar) {
-
-                    instruction.textContent =
-                        "❌ MindAR chưa khởi tạo";
-
+            // 3. Sự kiện Bật/Tắt Tiếng (Khối 3)
+            btnAudio.addEventListener('click', () => {
+                if (!isVideoLoaded) {
+                    alert("Bạn chưa chọn file Video!");
                     return;
                 }
-
-
-                await mindar.start();
-
-                mindarStarted = true;
-
-                instruction.textContent =
-                    "📸 Rọi camera vào hình nhận dạng...";
-
-                cameraButton.textContent =
-                    "✅ Camera đang chạy";
-
-            } catch (error) {
-
-                console.error(
-                    "MindAR start error:",
-                    error
-                );
-
-                instruction.textContent =
-                    "❌ Không mở được camera";
-
-                cameraButton.textContent =
-                    "📷 Thử lại Camera";
-
-            }
-        }
-
-
-        /*
-         * ==========================================
-         * NÚT MỞ CAMERA
-         * ==========================================
-         */
-
-        cameraButton.addEventListener(
-            "click",
-            function () {
-
-                startAR();
-
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * KHI A-FRAME ĐÃ LOAD
-         * ==========================================
-         */
-
-        scene.addEventListener(
-            "loaded",
-            function () {
-
-                /*
-                 * Cho MindAR tự khởi động trước.
-                 * Nếu trình duyệt không cho tự động,
-                 * người dùng bấm Mở Camera.
-                 */
-
-                setTimeout(
-                    function () {
-
-                        startAR();
-
-                    },
-                    300
-                );
-
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * CHỌN VIDEO
-         * ==========================================
-         */
-
-        chooseButton.addEventListener(
-            "click",
-            function () {
-
-                videoFile.click();
-
-            }
-        );
-
-
-        videoFile.addEventListener(
-            "change",
-            function (event) {
-
-                const file =
-                    event.target.files[0];
-
-                if (!file) {
-                    return;
-                }
-
-
-                if (videoURL) {
-
-                    URL.revokeObjectURL(
-                        videoURL
-                    );
-
-                }
-
-
-                videoURL =
-                    URL.createObjectURL(file);
-
-
-                video.pause();
-
-                video.src =
-                    videoURL;
-
-                video.muted = true;
-
-                video.loop = true;
-
-                video.playsInline = true;
-
-                video.load();
-
-
-                soundButton.textContent =
-                    "🔊 Bật Tiếng";
-
-
-                instruction.textContent =
-                    "🎬 Đã chọn video - Rọi vào hình!";
-
-
-                /*
-                 * Nếu target đang được nhận diện
-                 */
-
-                if (targetFound) {
-
-                    video.play().catch(
-                        function (error) {
-
-                            console.log(
-                                "Video play:",
-                                error
-                            );
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * ÂM THANH
-         * ==========================================
-         */
-
-        soundButton.addEventListener(
-            "click",
-            function () {
-
-                if (!video.src) {
-
-                    instruction.textContent =
-                        "📂 Hãy chọn video trước!";
-
-                    return;
-                }
-
 
                 if (video.muted) {
-
                     video.muted = false;
-
-                    soundButton.textContent =
-                        "🔇 Tắt Tiếng";
-
-                    video.play().catch(
-                        function () {
-
-                            video.muted = true;
-
-                            soundButton.textContent =
-                                "🔊 Bật Tiếng";
-
-                        }
-                    );
-
+                    btnAudio.innerText = "🔊 Tắt Tiếng";
+                    status.innerText = "🔊 Đang phát âm thanh...";
+                    video.play().catch(() => {});
                 } else {
-
                     video.muted = true;
-
-                    soundButton.textContent =
-                        "🔊 Bật Tiếng";
-
+                    btnAudio.innerText = "▶️ Mở Tiếng";
+                    status.innerText = "🔇 Đã tắt tiếng.";
                 }
+            });
 
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * BẮT ĐƯỢC HÌNH
-         * ==========================================
-         */
-
-        target.addEventListener(
-            "targetFound",
-            function () {
-
-                targetFound = true;
-
-                instruction.textContent =
-                    "🎯 Đã bắt được hình!";
-
-
-                if (video.src) {
-
-                    video.play().catch(
-                        function (error) {
-
-                            console.log(
-                                "Video play:",
-                                error
-                            );
-
-                        }
-                    );
-
+            // 4. Lắng nghe sự kiện nhận diện Target (Khối 2 & 3)
+            target.addEventListener("targetFound", () => { 
+                if (isVideoLoaded) {
+                    video.play().catch((err) => {
+                        console.log("Cần tương tác để phát video:", err);
+                    });
+                    status.innerText = "🎯 BẮT TRÚNG HÌNH! Đang phát...";
+                } else {
+                    status.innerText = "🎯 Đã bắt trúng hình! (Chưa chọn video)";
                 }
-
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * MẤT HÌNH
-         * ==========================================
-         */
-
-        target.addEventListener(
-            "targetLost",
-            function () {
-
-                targetFound = false;
-
-                video.pause();
-
-                instruction.textContent =
-                    "⚠️ Mất dấu - Rọi lại vào hình!";
-
-            }
-        );
-
-
-        /*
-         * ==========================================
-         * DEBUG MINDAR
-         * ==========================================
-         */
-
-        scene.addEventListener(
-            "arReady",
-            function () {
-
-                console.log(
-                    "MindAR camera READY"
-                );
-
-                instruction.textContent =
-                    "📸 Rọi camera vào hình nhận dạng...";
-
-            }
-        );
-
-
-        scene.addEventListener(
-            "arError",
-            function (event) {
-
-                console.error(
-                    "MindAR ERROR:",
-                    event
-                );
-
-                instruction.textContent =
-                    "❌ MindAR không khởi động được";
-
-            }
-        );
-
+            });
+            
+            target.addEventListener("targetLost", () => { 
+                if (isVideoLoaded) {
+                    video.pause();
+                }
+                status.innerText = "⚠️ Mất dấu - Rọi lại vào hình!";
+            });
+        });
     </script>
-
 </body>
 </html>
