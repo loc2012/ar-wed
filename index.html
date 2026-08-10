@@ -243,16 +243,12 @@ p(<!DOCTYPE html>
 
 
 
-
-
-
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3: Chia Đôi VR Chuẩn A-Frame</title>
+    <title>Khối 3: Chia Đôi Màn Hình VR Thật sự</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -289,42 +285,52 @@ p(<!DOCTYPE html>
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Khung chứa 2 mắt thực sự */
-        .vr-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
+        /* KHUNG BAO NGOÀI TOÀN BỘ */
+        #vr-wrapper {
             width: 100vw;
             height: 100vh;
-            z-index: 99999;
-            pointer-events: none;
+            position: relative;
         }
 
-        /* Khi bật VR: Chia đôi thực sự bằng 2 vùng chứa độc lập */
-        body.is-vr .vr-container {
+        /* BẬT CHẾ ĐỘ CHIA ĐÔI THẬT SỰ */
+        body.mode-vr-split #vr-wrapper {
             display: flex;
         }
 
-        .eye-box {
+        /* Mắt trái */
+        body.mode-vr-split .a-canvas,
+        body.mode-vr-split video {
+            width: 50vw !important;
+            height: 100vh !important;
+            left: 0 !important;
+            object-fit: cover !important;
+        }
+
+        /* Lớp phủ mắt phải dùng CSS Background Reflection */
+        #right-eye-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
             width: 50vw;
             height: 100vh;
+            z-index: 99998;
+            border-left: 2px solid #00ffcc;
+            background: #000;
             overflow: hidden;
-            position: relative;
-            border-right: 1px solid #00ffcc;
         }
 
-        .eye-box video, .eye-box canvas {
-            position: absolute;
-            top: 0;
-            height: 100% !important;
-            width: auto !important;
-            max-width: none !important;
+        body.mode-vr-split #right-eye-overlay {
+            display: block;
         }
 
-        /* Căn giữa hình ảnh cho từng mắt */
-        #eye-left video, #eye-left canvas { left: 50%; transform: translateX(-50%); }
-        #eye-right video, #eye-right canvas { left: 50%; transform: translateX(-50%); }
+        #right-eye-overlay iframe {
+            width: 200%;
+            height: 100%;
+            border: none;
+            margin-left: -100%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -333,75 +339,62 @@ p(<!DOCTYPE html>
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
-    <!-- KHUNG CHIA ĐÔI CHUẨN HAI MẮT -->
-    <div class="vr-container" id="vr-overlay">
-        <div class="eye-box" id="eye-left"></div>
-        <div class="eye-box" id="eye-right"></div>
+    <!-- KHUNG CHỨA SCENE -->
+    <div id="vr-wrapper">
+        <a-scene 
+            id="ar-scene"
+            mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+            embedded
+            color-space="sRGB" 
+            renderer="colorManagement: true, physicallyCorrectLights"
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false">
+            
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
+                       animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+                </a-box>
+            </a-entity>
+        </a-scene>
     </div>
 
-    <!-- SCENE AR GỐC -->
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
-        
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
-                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-            </a-box>
-        </a-entity>
-    </a-scene>
+    <!-- MẮT PHẢI HIỂN THỊ NỬA CÒN LẠI -->
+    <div id="right-eye-overlay" id="eye2"></div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
-            const eyeLeft = document.getElementById("eye-left");
-            const eyeRight = document.getElementById("eye-right");
+            const eye2 = document.getElementById("right-eye-overlay");
             let isVR = false;
 
             btnVR.addEventListener("click", function () {
                 isVR = !isVR;
 
                 if (isVR) {
-                    document.body.classList.add("is-vr");
+                    document.body.classList.add("mode-vr-split");
                     btnVR.innerText = "📱 Màn Hình Đơn";
                     btnVR.style.background = "#ff3366";
                     btnVR.style.borderColor = "#ff3366";
                     btnVR.style.color = "#fff";
 
-                    // Nhân bản Canvas gốc và Video Camera sang 2 ô riêng biệt
-                    const mainCanvas = document.querySelector(".a-canvas");
-                    const mainVideo = document.querySelector("video");
-
-                    if (mainCanvas && mainVideo) {
-                        // Đưa bản sao vào mắt trái và mắt phải
-                        eyeLeft.innerHTML = "";
-                        eyeRight.innerHTML = "";
-                        
-                        eyeLeft.appendChild(mainVideo.cloneNode(true));
-                        eyeLeft.appendChild(mainCanvas.cloneNode(true));
-
-                        eyeRight.appendChild(mainVideo.cloneNode(true));
-                        eyeRight.appendChild(mainCanvas.cloneNode(true));
-                    }
+                    // Nhúng mirror bằng iframe chính trang này để nhân bản mắt 2 100%
+                    eye2.innerHTML = `<iframe src="${window.location.href}"></iframe>`;
                 } else {
-                    document.body.classList.remove("is-vr");
+                    document.body.classList.remove("mode-vr-split");
                     btnVR.innerText = "🥽 Bật Chia Đôi VR";
                     btnVR.style.background = "#00ffcc";
                     btnVR.style.borderColor = "#00ffcc";
                     btnVR.style.color = "#000";
-                    eyeLeft.innerHTML = "";
-                    eyeRight.innerHTML = "";
+                    eye2.innerHTML = "";
                 }
+
+                window.dispatchEvent(new Event('resize'));
             });
         });
     </script>
 
 </body>
 </html>
+
