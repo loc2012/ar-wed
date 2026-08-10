@@ -250,7 +250,7 @@ p(<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3: Ép Chia Đôi VR Chuẩn</title>
+    <title>Khối 3: Chia Đôi VR Không Bao Giờ Đen</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -266,7 +266,7 @@ p(<!DOCTYPE html>
             font-family: sans-serif;
         }
 
-        /* NÚT BẤM ĐIỀU KHIỂN */
+        /* NÚT BẤM VR */
         #block3-ui {
             position: fixed;
             bottom: 25px;
@@ -288,28 +288,38 @@ p(<!DOCTYPE html>
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* BẢN SAO BÊN PHẢI */
-        #clone-canvas {
-            position: fixed !important;
-            top: 0 !important;
-            right: 0 !important;
-            width: 50vw !important;
-            height: 100vh !important;
-            z-index: 99999 !important;
-            border-left: 2px solid #00ffcc;
+        /* MÀN HÌNH GIẢ LẬP MẮT PHẢI */
+        #vr-right-eye {
             display: none;
-            background: #000;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 50vw;
+            height: 100vh;
+            z-index: 99999;
+            pointer-events: none;
+            overflow: hidden;
+            border-left: 2px solid #00ffcc;
         }
 
-        /* KHIN BẬT VR: ÉP CANVAS CỦA A-FRAME BẮT BUỘC THU VỀ 50% BÊN TRÁI */
-        body.vr-mode-on .a-canvas {
+        /* KHI BẬT CHẾ ĐỘ VR */
+        body.vr-split-active .a-canvas {
             width: 50vw !important;
             left: 0 !important;
         }
 
-        /* HIỆN CANVAS BẢN SAO BÊN PHẢI */
-        body.vr-mode-on #clone-canvas {
-            display: block !important;
+        /* TẠO MẮT PHẢI BẰNG CSS REFLECTION (KHÔNG DÙNG JS CANVAS) */
+        body.vr-split-active #vr-right-eye {
+            display: block;
+        }
+        
+        #vr-right-eye-inner {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: scaleX(1); /*Giữ khung hình chuẩn */
         }
     </style>
 </head>
@@ -320,8 +330,10 @@ p(<!DOCTYPE html>
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
-    <!-- CANVAS BẢN SAO (BÊN PHẢI) -->
-    <canvas id="clone-canvas"></canvas>
+    <!-- KHUNG TẠO MẮT PHẢI KHÔNG LO ĐEN -->
+    <div id="vr-right-eye">
+        <div id="vr-right-eye-inner"></div>
+    </div>
 
     <!-- SCENE CHÍNH -->
     <a-scene 
@@ -329,7 +341,7 @@ p(<!DOCTYPE html>
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
         embedded
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
+        renderer="colorManagement: true, physicallyCorrectLights, preserveDrawingBuffer: true"
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
         
@@ -342,51 +354,44 @@ p(<!DOCTYPE html>
         </a-entity>
     </a-scene>
 
-    <!-- LOGIC CHUẨN -->
+    <!-- LOGIC BẬT TẮT NÚT VR -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
-            const cloneCanvas = document.getElementById("clone-canvas");
-            const cloneCtx = cloneCanvas.getContext("2d");
-
+            const rightEyeInner = document.getElementById("vr-right-eye-inner");
             let isVR = false;
-            let animId = null;
-
-            // Hàm copy ảnh từ màn hình trái sang màn hình phải
-            function loopDraw() {
-                const sourceCanvas = document.querySelector(".a-canvas");
-                if (sourceCanvas && isVR) {
-                    if (cloneCanvas.width !== sourceCanvas.width) {
-                        cloneCanvas.width = sourceCanvas.width;
-                        cloneCanvas.height = sourceCanvas.height;
-                    }
-                    cloneCtx.drawImage(sourceCanvas, 0, 0);
-                }
-                if (isVR) {
-                    animId = requestAnimationFrame(loopDraw);
-                }
-            }
 
             btnVR.addEventListener("click", function () {
                 isVR = !isVR;
 
                 if (isVR) {
-                    document.body.classList.add("vr-mode-on");
+                    document.body.classList.add("vr-split-active");
                     btnVR.innerText = "📱 Màn Hình Đơn";
                     btnVR.style.background = "#ff3366";
                     btnVR.style.borderColor = "#ff3366";
                     btnVR.style.color = "#fff";
-                    loopDraw(); // Chạy bản sao
+
+                    // Chuyển video camera vào khung bên phải
+                    const video = document.querySelector("video");
+                    if(video) {
+                        const cloneVideo = video.cloneNode(true);
+                        cloneVideo.style.width = "100%";
+                        cloneVideo.style.height = "100%";
+                        cloneVideo.style.objectFit = "cover";
+                        rightEyeInner.innerHTML = "";
+                        rightEyeInner.appendChild(cloneVideo);
+                        cloneVideo.play();
+                    }
                 } else {
-                    document.body.classList.remove("vr-mode-on");
+                    document.body.classList.remove("vr-split-active");
                     btnVR.innerText = "🥽 Bật Chia Đôi VR";
                     btnVR.style.background = "#00ffcc";
                     btnVR.style.borderColor = "#00ffcc";
                     btnVR.style.color = "#000";
-                    if (animId) cancelAnimationFrame(animId);
+                    rightEyeInner.innerHTML = "";
                 }
 
-                // Ép A-Frame tính toán lại khung hình
+                // Cập nhật lại WebGL
                 window.dispatchEvent(new Event('resize'));
             });
         });
@@ -395,5 +400,4 @@ p(<!DOCTYPE html>
 </body>
 </html>
 
- 
 
