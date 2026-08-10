@@ -416,15 +416,14 @@ p(<!DOCTYPE html>
 
 
 
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Chọn Video Từ Máy Chạy 360 VR</title>
+    <title>Khối 4: Video 360 Xoay Chuẩn</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         html, body {
@@ -437,122 +436,84 @@ p(<!DOCTYPE html>
             font-family: sans-serif;
         }
 
-        /* KHU VỰC NÚT BẤM TRÊN MÀN HÌNH */
         #block4-ui {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
-            display: flex;
-            gap: 10px;
         }
 
         .ui-btn {
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ffcc;
-            border: 2px solid #00ffcc;
-            padding: 10px 18px;
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 12px 22px;
             border-radius: 25px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Ẩn thẻ input file mặc định của hệ thống */
-        #file-input {
-            display: none;
-        }
+        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- BẢNG ĐIỀU KHIỂN & NÚT TẢI VIDEO -->
     <div id="block4-ui">
-        <!-- Nút chọn Video từ điện thoại -->
-        <button class="ui-btn" id="btn-upload">📂 Chọn Video Từ Máy</button>
+        <button class="ui-btn" id="btn-upload">📂 Chọn Video Để Xoay 360°</button>
         <input type="file" id="file-input" accept="video/*">
     </div>
 
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-        embedded
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
+    <!-- Video ẩn dùng làm thẻ nguồn -->
+    <video id="local-video" loop playsinline webkit-playsinline crossorigin="anonymous" style="display:none;"></video>
+
+    <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         
-        <a-assets>
-            <!-- Video mặc định (sẽ bị thay thế khi bạn bấm chọn video mới) -->
-            <video id="ar-video" 
-                   src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
-                   preload="auto" 
-                   loop="true" 
-                   crossorigin="anonymous" 
-                   webkit-playsinline 
-                   playsinline>
-            </video>
-        </a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: true"></a-camera>
 
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <!-- ENTITY MẮT THẤY TARGET -->
-        <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-            
-            <!-- HÌNH TRỤ 360° CHỨA VIDEO XOAY LIÊN TỤC -->
+        <!-- KHỐI VIDEO 360 THẢ TRỰC TIẾP TRƯỚC MẶT ĐỂ TEST (KHÔNG CẦN QUÉT TARGET) -->
+        <a-entity id="video-container" position="0 0 -2">
+            <!-- Khung hình trụ uốn cong 360 xoay liên tục -->
             <a-cylinder 
-                src="#ar-video" 
-                position="0 0.5 0" 
+                id="video-mesh"
+                position="0 0 0" 
                 radius="1.2" 
-                height="1" 
+                height="1.2" 
                 open-ended="true" 
                 side="double"
-                rotation="0 0 0"
-                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
+                material="shader: flat; src: #local-video; side: double"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear">
             </a-cylinder>
-
         </a-entity>
+
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const btnUpload = document.getElementById("btn-upload");
             const fileInput = document.getElementById("file-input");
-            const arVideo = document.getElementById("ar-video");
-            const targetEntity = document.getElementById("target-entity");
+            const video = document.getElementById("local-video");
+            const videoMesh = document.getElementById("video-mesh");
 
-            // 1. Khi bấm nút "📂 Chọn Video Từ Máy" -> Mở thư viện file điện thoại
-            btnUpload.addEventListener("click", function () {
-                fileInput.click();
-            });
+            btnUpload.addEventListener("click", () => fileInput.click());
 
-            // 2. Khi người dùng chọn xong 1 file Video từ máy
             fileInput.addEventListener("change", function (e) {
                 const file = e.target.files[0];
                 if (file) {
-                    // Tạo đường dẫn tạm thời cho video trong bộ nhớ máy
                     const videoURL = URL.createObjectURL(file);
+                    video.src = videoURL;
+                    video.play();
+
+                    // Cập nhật lại Texture cho WebGL
+                    videoMesh.setAttribute('material', 'src', '#local-video');
                     
-                    arVideo.src = videoURL;
-                    arVideo.load();
-                    arVideo.play();
-
-                    btnUpload.innerText = "✅ Đã Tải Video!";
-                    btnUpload.style.borderColor = "#ff007f";
-                    btnUpload.style.color = "#ff007f";
+                    btnUpload.innerText = "🎬 Đang Xoay Video 360°";
+                    btnUpload.style.background = "#ff007f";
+                    btnUpload.style.color = "#fff";
                 }
-            });
-
-            // 3. Tự động Play/Pause theo Target
-            targetEntity.addEventListener("targetFound", () => {
-                arVideo.play().catch(e => console.log(e));
-            });
-
-            targetEntity.addEventListener("targetLost", () => {
-                arVideo.pause();
             });
         });
     </script>
