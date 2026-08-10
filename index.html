@@ -447,14 +447,18 @@
                     ctx.lineWidth = 4;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
-                    // --- DÁN THÊM VẼ NHÂN VẬT VUÔNG ĐỎ VÀO ĐÂY ---
-                    let size = 80; // Kích thước khối đỏ
+                    // --- VẼ KHỐI VUÔNG ĐỎ (ĐÃ TĂNG NỔI BẬT) ---
+                    let size = 120; // Tăng size lên 120px cho to rực rỡ
                     ctx.fillStyle = "#ff0000";
-                    ctx.fillRect(avgX - size/2, avgY - size/2, size, size);
-                    ctx.strokeStyle = "#ffff00";
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(avgX - size/2, avgY - size/2, size, size);
+                    ctx.fillRect(avgX - size / 2, avgY - size / 2, size, size);
 
+                    // Viền vàng Neon to dày
+                    ctx.strokeStyle = "#ffff00";
+                    ctx.lineWidth = 8;
+                    ctx.strokeRect(avgX - size / 2, avgY - size / 2, size, size);
+
+
+    
                     // Chấm trắng tâm điểm chính giữa
                     ctx.beginPath();
                     ctx.arc(avgX, avgY, 5, 0, 2 * Math.PI, false);
