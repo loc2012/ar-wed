@@ -447,6 +447,13 @@
                     ctx.lineWidth = 4;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
+                    // --- DÁN THÊM VẼ NHÂN VẬT VUÔNG ĐỎ VÀO ĐÂY ---
+                    let size = 80; // Kích thước khối đỏ
+                    ctx.fillStyle = "#ff0000";
+                    ctx.fillRect(avgX - size/2, avgY - size/2, size, size);
+                    ctx.strokeStyle = "#ffff00";
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(avgX - size/2, avgY - size/2, size, size);
 
                     // Chấm trắng tâm điểm chính giữa
                     ctx.beginPath();
@@ -492,128 +499,3 @@
 
 
 
-
-<!DOCTYPE html>
-<html>
-<body style="margin:0; overflow:hidden; background:#000;">
-    <canvas id="main-canvas"></canvas>
-    
-    <script>
-        // --- KHỐI 3: DỮ LIỆU TỌA ĐỘ GIẢ LẬP (Hoặc từ Camera) ---
-        window.khoi3Target = { x: 0, y: 0, detected: false };
-
-        const canvas = document.getElementById('main-canvas');
-        const ctx = canvas.getContext('2d');
-
-        function mainLoop() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            // 1. Logic Khối 3: Ở đây mình giả lập tọa độ bay theo chuột 
-            // Bạn có thể thay bằng hàm quét màu cũ của bạn
-            
-            // 2. LOGIC KHỐI 4: VẼ NHÂN VẬT VUÔNG ĐỎ (Chỉ 5 dòng)
-            if (window.khoi3Target.detected) {
-                ctx.fillStyle = 'red'; // Màu nhân vật
-                let size = 60; // Kích thước khối vuông
-                ctx.fillRect(window.khoi3Target.x - size/2, window.khoi3Target.y - size/2, size, size);
-            }
-
-            requestAnimationFrame(mainLoop);
-        }
-        
-        // --- Test: Chạy thử bằng cách click chuột ---
-        window.addEventListener('mousemove', (e) => {
-            window.khoi3Target.x = e.clientX;
-            window.khoi3Target.y = e.clientY;
-            window.khoi3Target.detected = true;
-        });
-
-        mainLoop();
-    </script>
-</body>
-
-
-
-
-
-
-
-    <!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Tracker Tích Hợp</title>
-    <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-        #canvas { display: block; width: 100vw; height: 100vh; object-fit: cover; }
-        #debug { position: fixed; top: 5px; left: 5px; color: #0f0; font-size: 10px; pointer-events: none; }
-    </style>
-</head>
-<body>
-    <div id="debug">Đang khởi động...</div>
-    <video id="vid" autoplay playsinline muted style="display:none;"></video>
-    <canvas id="canvas"></canvas>
-
-    <script>
-        const vid = document.getElementById('vid');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const debug = document.getElementById('debug');
-
-        // Bật Camera
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(s => vid.srcObject = s);
-
-        let targetX = 0, targetY = 0; // Biến tọa độ toàn cục
-
-        function loop() {
-            if (vid.readyState === vid.HAVE_ENOUGH_DATA) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-
-                // 1. Vẽ Camera
-                ctx.save();
-                ctx.scale(-1, 1);
-                ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
-                ctx.restore();
-
-                // 2. KHỐI 3: QUÉT MÀU XANH
-                let frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                let data = frame.data;
-                let sX = 0, sY = 0, count = 0;
-
-                for (let i = 0; i < data.length; i += 32) { // Quét thưa cho nhanh
-                    let r = data[i], g = data[i+1], b = data[i+2];
-                    if (g > 80 && g > r * 1.2 && g > b * 1.2) {
-                        let idx = i / 4;
-                        sX += (idx % canvas.width);
-                        sY += Math.floor(idx / canvas.width);
-                        count++;
-                    }
-                }
-
-                // 3. KHỐI 4: GỌI NHÂN VẬT & DI CHUYỂN
-                if (count > 20) {
-                    targetX = sX / count;
-                    targetY = sY / count;
-                    debug.innerText = "Đang bắt mục tiêu...";
-                    
-                    // Vẽ Nhân vật (Khối vuông đỏ)
-                    ctx.fillStyle = "red";
-                    ctx.fillRect(targetX - 40, targetY - 40, 80, 80); // Kích thước 80x80
-                    
-                    // Vẽ viền nhân vật
-                    ctx.strokeStyle = "yellow";
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(targetX - 40, targetY - 40, 80, 80);
-                } else {
-                    debug.innerText = "Không thấy mục tiêu";
-                }
-            }
-            requestAnimationFrame(loop);
-        }
-        loop();
-    </script>
-</body>
-</html>
