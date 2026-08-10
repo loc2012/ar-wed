@@ -597,12 +597,19 @@
 
 
 
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 5: Khối 3D Xoay Phát Video</title>
+    <title>Video 3D - 1 Nút Duy Nhất</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
@@ -617,7 +624,7 @@
             font-family: sans-serif;
         }
 
-        /* KHUNG PREVIEW GÓC TRÁI */
+        /* KHUNG PREVIEW NHỎ GÓC TRÁI (KIỂM TRA HÌNH) */
         #preview-box {
             position: fixed;
             top: 15px;
@@ -629,12 +636,13 @@
             border-radius: 8px;
             z-index: 999999;
             overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
 
         #canvas-preview { width: 100%; height: 100%; object-fit: cover; }
 
-        /* NÚT TẢI VIDEO */
-        #block5-ui {
+        /* ĐÚNG 1 NÚT DUY NHẤT GÓC PHẢI */
+        #single-ui {
             position: fixed;
             top: 15px;
             right: 15px;
@@ -645,9 +653,9 @@
             background: #00ffcc;
             color: #000;
             border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
@@ -659,107 +667,98 @@
 </head>
 <body>
 
-    <!-- 1. PREVIEW CANVAS -->
+    <!-- 1. KHUNG PREVIEW GÓC TRÁI -->
     <div id="preview-box">
         <canvas id="canvas-preview"></canvas>
     </div>
 
-    <!-- 2. UI NÚT BẤM -->
-    <div id="block5-ui">
-        <button class="ui-btn" id="btn-upload">📂 Tải Video Vào Khối 3D</button>
+    <!-- 2. ĐÚNG 1 NÚT BẤM DUY NHẤT -->
+    <div id="single-ui">
+        <button class="ui-btn" id="btn-action">📂 Chọn Video & Phát</button>
         <input type="file" id="file-input" accept="video/*">
     </div>
 
     <!-- Video nguồn ẩn -->
-    <video id="raw-video" loop playsinline webkit-playsinline muted style="display:none;"></video>
+    <video id="raw-video" loop playsinline webkit-playsinline style="display:none;"></video>
 
-    <!-- 3. SCENE 3D KHỐI LẬP PHƯƠNG XOAY -->
+    <!-- 3. SCENE 3D (TẤM BẢNG PHẲNG HIỆN VIDEO TRƯỚC MẶT) -->
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- KHỐI LẬP PHƯƠNG (CUBE) ĐẶT TRƯỚC MẮT (position: 0 0 -2.5) -->
-        <a-box 
-            id="video-box"
-            position="0 0 -2.5" 
-            scale="1.2 1.2 1.2"
-            material="color: #222222">
-        </a-box>
+        <!-- MÀN HÌNH 3D ĐẶT NGAY TRƯỚC MẶT, XOAY NHẸ HOẶC ĐỨNG YÊN -->
+        <a-entity id="video-group" position="0 0 -2.2">
+            <a-plane 
+                id="video-plane"
+                width="2" 
+                height="1.125" 
+                position="0 0 0"
+                material="shader: flat; side: double; color: #111">
+            </a-plane>
+            <!-- Viền neon trang trí cho đẹp -->
+            <a-ring radius-inner="1.05" radius-outer="1.1" color="#00ffcc" position="0 0 -0.01"></a-ring>
+        </a-entity>
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const btnUpload = document.getElementById("btn-upload");
+            const btnAction = document.getElementById("btn-action");
             const fileInput = document.getElementById("file-input");
             const video = document.getElementById("raw-video");
             const previewCanvas = document.getElementById("canvas-preview");
             const ctxPreview = previewCanvas.getContext("2d");
-            const videoBox = document.getElementById("video-box");
+            const videoPlane = document.getElementById("video-plane");
 
-            let texture, material;
-            let rotationAngle = 0;
+            let texture = null;
 
-            // VÒNG LẶP ÉP KHỐI 3D XOAY LIÊN TỤC TRỰC TIẾP BẰNG JS (KHÔNG SỢ LỖI ANIMATION)
-            function rotateBlock() {
-                rotationAngle += 1; // Tốc độ xoay
-                if (rotationAngle >= 360) rotationAngle = 0;
-                
-                // Xoay khối 3D theo 2 trục X và Y cùng lúc cho hiệu ứng 3D rõ nét
-                videoBox.setAttribute('rotation', `${rotationAngle} ${rotationAngle} 0`);
-                
-                requestAnimationFrame(rotateBlock);
-            }
-            rotateBlock(); // Chạy xoay ngay lập tức
+            // Bấm nút là mở file lên chọn
+            btnAction.addEventListener("click", () => fileInput.click());
 
-            btnUpload.addEventListener("click", () => fileInput.click());
-
+            // Khi người dùng đã chọn xong video từ máy
             fileInput.addEventListener("change", function (e) {
                 const file = e.target.files[0];
                 if (file) {
                     const videoURL = URL.createObjectURL(file);
                     video.src = videoURL;
-                    video.muted = true;
+                    video.muted = false; // Cho phép có tiếng luôn không cần bấm lằng nhằng
 
                     video.play().then(() => {
                         previewCanvas.width = 320;
                         previewCanvas.height = 180;
 
-                        // Tạo Texture dán lên Khối Lập Phương 3D
+                        // Đưa video lên WebGL texture của A-Frame
                         const THREE = window.THREE;
                         texture = new THREE.CanvasTexture(previewCanvas);
                         texture.minFilter = THREE.LinearFilter;
                         texture.magFilter = THREE.LinearFilter;
 
-                        material = new THREE.MeshBasicMaterial({
-                            map: texture
+                        const material = new THREE.MeshBasicMaterial({
+                            map: texture,
+                            side: THREE.DoubleSide
                         });
 
-                        const mesh = videoBox.getObject3D('mesh');
+                        const mesh = videoPlane.getObject3D('mesh');
                         if (mesh) {
                             mesh.material = material;
                         }
 
-                        // Cập nhật khung hình video liên tục
-                        function renderFrame() {
+                        // Đổi chữ nút thành trạng thái đang chạy
+                        btnAction.innerText = "🎬 Đang Phát Video";
+                        btnAction.style.background = "#ff007f";
+                        btnAction.style.color = "#fff";
+
+                        // Vòng lặp liên tục cập nhật khung hình video sang Canvas và 3D
+                        function renderLoop() {
                             if (!video.paused && !video.ended) {
                                 ctxPreview.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
                                 if (texture) texture.needsUpdate = true;
                             }
-                            requestAnimationFrame(renderFrame);
+                            requestAnimationFrame(renderLoop);
                         }
-                        renderFrame();
+                        renderLoop();
 
-                        btnUpload.innerText = "🔊 Mở Tiếng";
-                        btnUpload.style.background = "#ff007f";
-                        btnUpload.style.color = "#fff";
+                    }).catch(err => {
+                        alert("Không thể phát video này, thử chọn file khác nhé!");
                     });
-                }
-            });
-
-            // Mở tiếng video
-            btnUpload.addEventListener("click", function() {
-                if(video.src && video.muted) {
-                    video.muted = false;
-                    btnUpload.innerText = "🎲 Khối 3D Đang Xoay";
                 }
             });
         });
