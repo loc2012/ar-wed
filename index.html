@@ -1,4 +1,4 @@
-9p(<!DOCTYPE html>
+9p(<!DOCTYPE html>9
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -418,14 +418,16 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Video 3D Góc Nghiêng 45 Độ</title>
+    <title>Video 3D 45 Độ Chuẩn</title>
     
-    <!-- CHỈ DÙNG AFRAME, BỎ HOÀN TOÀN MINDAR ĐỂ KHÔNG BỊ BẮT QUÉT ẢNH -->
+    <!-- CHỈ DÙNG AFRAME THUẦN (KHÔNG DÙNG MINDAR LÀM ẨN VIDEO NỮA) -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
     <style>
@@ -439,34 +441,35 @@
             font-family: sans-serif;
         }
 
-        #play-btn {
+        /* NÚT BẬT/TẮT TIẾNG NẰM GỌN Ở DƯỚI */
+        #sound-btn {
             position: fixed;
-            bottom: 25px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
-            background: #00ffcc;
-            color: #000;
+            background: #ff007f;
+            color: #fff;
             border: none;
             padding: 12px 24px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.5);
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.5);
             -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
 <body>
 
-    <button id="play-btn">🎬 ĐANG PHÁT (GÓC NGHIÊNG 45°)</button>
+    <button id="sound-btn">🔊 BẬT TIẾNG VIDEO</button>
 
-    <!-- SCENE THƯỜNG - KHÔNG CÓ THẦN THÁNH TẢI TARGET NÀO CẢ -->
+    <!-- Canvas máy ảnh & WebGL -->
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         
         <a-assets>
-            <video id="auto-video" 
+            <video id="my-video" 
                    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
                    preload="auto" 
                    loop="true" 
@@ -480,20 +483,20 @@
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- ĐẶT MÀN HÌNH VIDEO NGAY TRƯỚC MẮT (position -1.8) VÀ XOAY NGHIÊNG 45 ĐỘ -->
+        <!-- KHỐI KHUNG VIDEO NGHIÊNG GÓC 45 ĐỘ TRƯỚC MẮT (BÊN TO BÊN NHỎ) -->
         <a-entity position="0 0 -1.8" rotation="0 45 0">
             
-            <!-- Tấm bảng video -->
+            <!-- Tấm bảng phát video -->
             <a-plane 
-                src="#auto-video"
+                src="#my-video"
                 width="2" 
                 height="1.15" 
                 position="0 0 0"
                 material="shader: flat; side: double;">
             </a-plane>
 
-            <!-- Viền sáng neon để nhìn rõ hình 3D trong không gian -->
-            <a-ring radius-inner="1.0" radius-outer="1.05" color="#00ffcc" position="0 0 -0.01"></a-ring>
+            <!-- Viền Neon xanh nổi bật góc 3D -->
+            <a-ring radius-inner="1.0" radius-outer="1.04" color="#00ffcc" position="0 0 -0.01"></a-ring>
             
         </a-entity>
 
@@ -501,23 +504,23 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const playBtn = document.getElementById("play-btn");
-            const video = document.getElementById("auto-video");
+            const btn = document.getElementById("sound-btn");
+            const video = document.getElementById("my-video");
 
-            // Tự động play video ngay
+            // Tự động bật video ngay khi load trang
             video.play().catch(() => {});
 
-            playBtn.addEventListener("click", function () {
+            btn.addEventListener("click", function () {
                 if (video.muted) {
                     video.muted = false;
-                    playBtn.innerText = "🔊 ĐÃ MỞ TIẾNG";
-                    playBtn.style.background = "#ff007f";
-                    playBtn.style.color = "#fff";
+                    btn.innerText = "🔊 ĐÃ MỞ TIẾNG";
+                    btn.style.background = "#00ffcc";
+                    btn.style.color = "#000";
                 } else {
                     video.muted = true;
-                    playBtn.innerText = "🔇 ĐÃ TẮT TIẾNG";
-                    playBtn.style.background = "#00ffcc";
-                    playBtn.style.color = "#000";
+                    btn.innerText = "🔇 ĐÃ TẮT TIẾNG";
+                    btn.style.background = "#ff007f";
+                    btn.style.color = "#fff";
                 }
             });
         });
