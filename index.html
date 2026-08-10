@@ -420,7 +420,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Preview Video & Hiển Thị 3D</title>
+    <title>Khối 4: Fix Lỗi Đen Hình Video</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
@@ -435,13 +435,13 @@
             font-family: sans-serif;
         }
 
-        /* KHUNG PREVIEW VIDEO (GÓC TRÊN BÊN TRÁI) */
-        #video-preview-box {
+        /* KHUNG PREVIEW XÁC NHẬN CÓ HÌNH */
+        #preview-box {
             position: fixed;
             top: 15px;
             left: 15px;
             width: 120px;
-            height: 70px;
+            height: 80px;
             background: #000;
             border: 2px solid #00ffcc;
             border-radius: 8px;
@@ -450,24 +450,13 @@
             box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
 
-        #preview-video {
+        #canvas-preview {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        #preview-status {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            background: rgba(0,0,0,0.7);
-            color: #00ffcc;
-            font-size: 9px;
-            text-align: center;
-            padding: 2px 0;
-        }
-
-        /* NÚT TẢI VIDEO */
+        /* NÚT CHỌN FILE */
         #block4-ui {
             position: fixed;
             top: 20px;
@@ -493,36 +482,34 @@
 </head>
 <body>
 
-    <!-- 1. KHUNG PREVIEW ĐỂ KIỂM TRA VIDEO NỀN -->
-    <div id="video-preview-box">
-        <video id="preview-video" loop playsinline webkit-playsinline muted></video>
-        <div id="preview-status">Chưa chọn video</div>
+    <!-- 1. KHUNG PREVIEW BẰNG CANVAS (ÉP HIỆN HÌNH CHẮC CHẮN 100%) -->
+    <div id="preview-box">
+        <canvas id="canvas-preview"></canvas>
     </div>
 
-    <!-- 2. NÚT CHỌN FILE -->
+    <!-- 2. NÚT CHỌN VIDEO -->
     <div id="block4-ui">
-        <button class="ui-btn" id="btn-upload">📂 Tải Video Vô</button>
+        <button class="ui-btn" id="btn-upload">📂 Tải Video Lên</button>
         <input type="file" id="file-input" accept="video/*">
     </div>
 
-    <!-- 3. SCENE 3D DISPLAY -->
+    <!-- Video nguồn -->
+    <video id="raw-video" loop playsinline webkit-playsinline muted style="display:none;"></video>
+
+    <!-- 3. SCENE A-FRAME CHỨA VÒM 360 -->
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- KHỐI 3D NẰM THẲNG TRƯỚC MẮT (Xoay 360 liên tục) -->
-        <a-entity id="video-3d-group" position="0 0 -2" animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear">
-            
-            <!-- Màn hình chiếu Video 3D dạng tấm bảng phẳng -->
-            <a-plane 
-                id="video-plane"
-                width="1.8" 
-                height="1.0" 
-                position="0 0 0"
-                material="shader: flat; side: double; color: #333333">
-            </a-plane>
-
-            <!-- Viền Neon Xanh quanh video để nhận biết vị trí -->
-            <a-ring radius-inner="0.9" radius-outer="0.95" color="#00ffcc" position="0 0 -0.01"></a-ring>
+        <!-- KHỐI HÌNH TRỤ 360 NẰM NGAY TRƯỚC MẮT XOAY LIÊN TỤC -->
+        <a-entity id="video-3d-group" position="0 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
+            <a-cylinder 
+                id="video-mesh"
+                radius="2" 
+                height="1.5" 
+                open-ended="true" 
+                side="double"
+                position="0 0 0">
+            </a-cylinder>
         </a-entity>
     </a-scene>
 
@@ -530,9 +517,12 @@
         document.addEventListener("DOMContentLoaded", function () {
             const btnUpload = document.getElementById("btn-upload");
             const fileInput = document.getElementById("file-input");
-            const video = document.getElementById("preview-video");
-            const statusText = document.getElementById("preview-status");
-            const videoPlane = document.getElementById("video-plane");
+            const video = document.getElementById("raw-video");
+            const previewCanvas = document.getElementById("canvas-preview");
+            const ctxPreview = previewCanvas.getContext("2d");
+            const videoMesh = document.getElementById("video-mesh");
+
+            let texture, material;
 
             btnUpload.addEventListener("click", () => fileInput.click());
 
@@ -540,45 +530,52 @@
                 const file = e.target.files[0];
                 if (file) {
                     const videoURL = URL.createObjectURL(file);
-                    
                     video.src = videoURL;
                     video.muted = true;
 
                     video.play().then(() => {
-                        statusText.innerText = "▶️ Đang chạy...";
-                        statusText.style.color = "#00ffcc";
+                        // Kích thước canvas preview
+                        previewCanvas.width = 320;
+                        previewCanvas.height = 180;
 
-                        // Cập nhật chất liệu Texture trực tiếp cho màn hình 3D trong A-Frame
+                        // Tạo Texture WebGL trực tiếp từ Canvas2D
                         const THREE = window.THREE;
-                        const texture = new THREE.VideoTexture(video);
+                        texture = new THREE.CanvasTexture(previewCanvas);
                         texture.minFilter = THREE.LinearFilter;
                         texture.magFilter = THREE.LinearFilter;
 
-                        const material = new THREE.MeshBasicMaterial({
+                        material = new THREE.MeshBasicMaterial({
                             map: texture,
                             side: THREE.DoubleSide
                         });
 
-                        const mesh = videoPlane.getObject3D('mesh');
+                        const mesh = videoMesh.getObject3D('mesh');
                         if (mesh) {
                             mesh.material = material;
                         }
 
-                        btnUpload.innerText = "🔊 Mở Tiếng";
+                        // Vòng lặp render từng khung hình (Frame)
+                        function renderFrame() {
+                            if (!video.paused && !video.ended) {
+                                ctxPreview.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+                                if (texture) texture.needsUpdate = true; // Ép WebGL cập nhật hình mới
+                            }
+                            requestAnimationFrame(renderFrame);
+                        }
+                        renderFrame();
+
+                        btnUpload.innerText = "🔊 Mở Tiếng Video";
                         btnUpload.style.background = "#ff007f";
                         btnUpload.style.color = "#fff";
-                    }).catch(err => {
-                        statusText.innerText = "❌ Lỗi Video";
-                        statusText.style.color = "#ff3366";
                     });
                 }
             });
 
-            // Bấm nút Mở tiếng
+            // Bấm mở tiếng
             btnUpload.addEventListener("click", function() {
                 if(video.src && video.muted) {
                     video.muted = false;
-                    btnUpload.innerText = "🎬 Video Đang Chạy";
+                    btnUpload.innerText = "🎬 Đang Xoay 360°";
                 }
             });
         });
@@ -586,3 +583,4 @@
 
 </body>
 </html>
+
