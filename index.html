@@ -415,12 +415,16 @@
 
 
 
+
+
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Fix Lỗi Đen Hình Video</title>
+    <title>Video 3D Góc Nghiêng 45 Độ</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
@@ -435,330 +439,84 @@
             font-family: sans-serif;
         }
 
-        /* KHUNG PREVIEW XÁC NHẬN CÓ HÌNH */
-        #preview-box {
+        /* NÚT CHẠY / BẬT TIẾNG DUY NHẤT TRÊN MÀN HÌNH */
+        #play-btn {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            width: 120px;
-            height: 80px;
-            background: #000;
-            border: 2px solid #00ffcc;
-            border-radius: 8px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 999999;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-        }
-
-        #canvas-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* NÚT CHỌN FILE */
-        #block4-ui {
-            position: fixed;
-            top: 20px;
-            right: 15px;
-            z-index: 999999;
-        }
-
-        .ui-btn {
-            background: #00ffcc;
-            color: #000;
+            background: #ff007f;
+            color: #fff;
             border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #file-input { display: none; }
-    </style>
-</head>
-<body>
-
-    <!-- 1. KHUNG PREVIEW BẰNG CANVAS (ÉP HIỆN HÌNH CHẮC CHẮN 100%) -->
-    <div id="preview-box">
-        <canvas id="canvas-preview"></canvas>
-    </div>
-
-    <!-- 2. NÚT CHỌN VIDEO -->
-    <div id="block4-ui">
-        <button class="ui-btn" id="btn-upload">📂 Tải Video Lên</button>
-        <input type="file" id="file-input" accept="video/*">
-    </div>
-
-    <!-- Video nguồn -->
-    <video id="raw-video" loop playsinline webkit-playsinline muted style="display:none;"></video>
-
-    <!-- 3. SCENE A-FRAME CHỨA VÒM 360 -->
-    <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <!-- KHỐI HÌNH TRỤ 360 NẰM NGAY TRƯỚC MẮT XOAY LIÊN TỤC -->
-        <a-entity id="video-3d-group" position="0 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
-            <a-cylinder 
-                id="video-mesh"
-                radius="2" 
-                height="1.5" 
-                open-ended="true" 
-                side="double"
-                position="0 0 0">
-            </a-cylinder>
-        </a-entity>
-    </a-scene>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const btnUpload = document.getElementById("btn-upload");
-            const fileInput = document.getElementById("file-input");
-            const video = document.getElementById("raw-video");
-            const previewCanvas = document.getElementById("canvas-preview");
-            const ctxPreview = previewCanvas.getContext("2d");
-            const videoMesh = document.getElementById("video-mesh");
-
-            let texture, material;
-
-            btnUpload.addEventListener("click", () => fileInput.click());
-
-            fileInput.addEventListener("change", function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const videoURL = URL.createObjectURL(file);
-                    video.src = videoURL;
-                    video.muted = true;
-
-                    video.play().then(() => {
-                        // Kích thước canvas preview
-                        previewCanvas.width = 320;
-                        previewCanvas.height = 180;
-
-                        // Tạo Texture WebGL trực tiếp từ Canvas2D
-                        const THREE = window.THREE;
-                        texture = new THREE.CanvasTexture(previewCanvas);
-                        texture.minFilter = THREE.LinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
-
-                        material = new THREE.MeshBasicMaterial({
-                            map: texture,
-                            side: THREE.DoubleSide
-                        });
-
-                        const mesh = videoMesh.getObject3D('mesh');
-                        if (mesh) {
-                            mesh.material = material;
-                        }
-
-                        // Vòng lặp render từng khung hình (Frame)
-                        function renderFrame() {
-                            if (!video.paused && !video.ended) {
-                                ctxPreview.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
-                                if (texture) texture.needsUpdate = true; // Ép WebGL cập nhật hình mới
-                            }
-                            requestAnimationFrame(renderFrame);
-                        }
-                        renderFrame();
-
-                        btnUpload.innerText = "🔊 Mở Tiếng Video";
-                        btnUpload.style.background = "#ff007f";
-                        btnUpload.style.color = "#fff";
-                    });
-                }
-            });
-
-            // Bấm mở tiếng
-            btnUpload.addEventListener("click", function() {
-                if(video.src && video.muted) {
-                    video.muted = false;
-                    btnUpload.innerText = "🎬 Đang Xoay 360°";
-                }
-            });
-        });
-    </script>
-
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Video 3D - 1 Nút Duy Nhất</title>
-    
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: sans-serif;
-        }
-
-        /* KHUNG PREVIEW NHỎ GÓC TRÁI (KIỂM TRA HÌNH) */
-        #preview-box {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            width: 110px;
-            height: 70px;
-            background: #000;
-            border: 2px solid #00ffcc;
-            border-radius: 8px;
-            z-index: 999999;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-        }
-
-        #canvas-preview { width: 100%; height: 100%; object-fit: cover; }
-
-        /* ĐÚNG 1 NÚT DUY NHẤT GÓC PHẢI */
-        #single-ui {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            z-index: 999999;
-        }
-
-        .ui-btn {
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.5);
             -webkit-tap-highlight-color: transparent;
         }
-
-        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- 1. KHUNG PREVIEW GÓC TRÁI -->
-    <div id="preview-box">
-        <canvas id="canvas-preview"></canvas>
-    </div>
+    <!-- NÚT MỞ VIDEO / BẬT TIẾNG -->
+    <button id="play-btn">▶️ BẮT ĐẦU PHÁT VIDEO</button>
 
-    <!-- 2. ĐÚNG 1 NÚT BẤM DUY NHẤT -->
-    <div id="single-ui">
-        <button class="ui-btn" id="btn-action">📂 Chọn Video & Phát</button>
-        <input type="file" id="file-input" accept="video/*">
-    </div>
-
-    <!-- Video nguồn ẩn -->
-    <video id="raw-video" loop playsinline webkit-playsinline style="display:none;"></video>
-
-    <!-- 3. SCENE 3D (TẤM BẢNG PHẲNG HIỆN VIDEO TRƯỚC MẶT) -->
     <a-scene embedded color-space="sRGB" vr-mode-ui="enabled: false">
+        
+        <a-assets>
+            <!-- Link video MP4 mẫu load trực tiếp cực nhanh -->
+            <video id="auto-video" 
+                   src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
+                   preload="auto" 
+                   loop="true" 
+                   crossorigin="anonymous" 
+                   playsinline 
+                   webkit-playsinline>
+            </video>
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- MÀN HÌNH 3D ĐẶT NGAY TRƯỚC MẶT, XOAY NHẸ HOẶC ĐỨNG YÊN -->
-        <a-entity id="video-group" position="0 0 -2.2">
+        <!-- KHỐI MÀN HÌNH NẰM NGHIÊNG GÓC 45 ĐỘ (TẠO HIỆU ỨNG BÊN TO BÊN NHỎ) -->
+        <a-entity position="0 0 -2" rotation="0 45 0">
+            
+            <!-- Màn hình chiếu video -->
             <a-plane 
-                id="video-plane"
-                width="2" 
-                height="1.125" 
+                src="#auto-video"
+                width="2.2" 
+                height="1.25" 
                 position="0 0 0"
-                material="shader: flat; side: double; color: #111">
+                material="shader: flat; side: double;">
             </a-plane>
-            <!-- Viền neon trang trí cho đẹp -->
-            <a-ring radius-inner="1.05" radius-outer="1.1" color="#00ffcc" position="0 0 -0.01"></a-ring>
+
+            <!-- Khung viền Neon nổi bật 3D -->
+            <a-ring radius-inner="1.15" radius-outer="1.2" color="#00ffcc" position="0 0 -0.01"></a-ring>
+            
         </a-entity>
+
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const btnAction = document.getElementById("btn-action");
-            const fileInput = document.getElementById("file-input");
-            const video = document.getElementById("raw-video");
-            const previewCanvas = document.getElementById("canvas-preview");
-            const ctxPreview = previewCanvas.getContext("2d");
-            const videoPlane = document.getElementById("video-plane");
+            const playBtn = document.getElementById("play-btn");
+            const video = document.getElementById("auto-video");
 
-            let texture = null;
-
-            // Bấm nút là mở file lên chọn
-            btnAction.addEventListener("click", () => fileInput.click());
-
-            // Khi người dùng đã chọn xong video từ máy
-            fileInput.addEventListener("change", function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const videoURL = URL.createObjectURL(file);
-                    video.src = videoURL;
-                    video.muted = false; // Cho phép có tiếng luôn không cần bấm lằng nhằng
-
-                    video.play().then(() => {
-                        previewCanvas.width = 320;
-                        previewCanvas.height = 180;
-
-                        // Đưa video lên WebGL texture của A-Frame
-                        const THREE = window.THREE;
-                        texture = new THREE.CanvasTexture(previewCanvas);
-                        texture.minFilter = THREE.LinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
-
-                        const material = new THREE.MeshBasicMaterial({
-                            map: texture,
-                            side: THREE.DoubleSide
-                        });
-
-                        const mesh = videoPlane.getObject3D('mesh');
-                        if (mesh) {
-                            mesh.material = material;
-                        }
-
-                        // Đổi chữ nút thành trạng thái đang chạy
-                        btnAction.innerText = "🎬 Đang Phát Video";
-                        btnAction.style.background = "#ff007f";
-                        btnAction.style.color = "#fff";
-
-                        // Vòng lặp liên tục cập nhật khung hình video sang Canvas và 3D
-                        function renderLoop() {
-                            if (!video.paused && !video.ended) {
-                                ctxPreview.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
-                                if (texture) texture.needsUpdate = true;
-                            }
-                            requestAnimationFrame(renderLoop);
-                        }
-                        renderLoop();
-
-                    }).catch(err => {
-                        alert("Không thể phát video này, thử chọn file khác nhé!");
-                    });
+            // Chỉ cần chạm nhẹ màn hình/nút 1 lần duy nhất là video phát có tiếng ngay
+            playBtn.addEventListener("click", function () {
+                if (video.paused) {
+                    video.play();
+                    playBtn.innerText = "🎬 Đang Phát (Góc Nghiêng 45°)";
+                    playBtn.style.background = "#00ffcc";
+                    playBtn.style.color = "#000";
+                } else {
+                    // Nếu bấm lần nữa thì tạm dừng
+                    video.pause();
+                    playBtn.innerText = "⏸️ Tạm Dừng";
+                    playBtn.style.background = "#ff007f";
+                    playBtn.style.color = "#fff";
                 }
             });
         });
