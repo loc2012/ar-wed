@@ -416,12 +416,12 @@ p(<!DOCTYPE html>
 
 
 
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 4: Video AR 360 Xoay Liên Tục</title>
+    <title>Khối 4: Chọn Video Từ Máy Chạy 360 VR</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -434,29 +434,46 @@ p(<!DOCTYPE html>
             height: 100%;
             overflow: hidden;
             background-color: #000;
+            font-family: sans-serif;
         }
 
+        /* KHU VỰC NÚT BẤM TRÊN MÀN HÌNH */
         #block4-ui {
             position: fixed;
-            top: 15px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 99999;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 16px;
-            border-radius: 20px;
+            z-index: 999999;
+            display: flex;
+            gap: 10px;
+        }
+
+        .ui-btn {
+            background: rgba(0, 0, 0, 0.8);
             color: #00ffcc;
-            font-family: sans-serif;
+            border: 2px solid #00ffcc;
+            padding: 10px 18px;
+            border-radius: 25px;
             font-size: 13px;
-            border: 1px solid #00ffcc;
-            pointer-events: none;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 255, 204, 0.3);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ẩn thẻ input file mặc định của hệ thống */
+        #file-input {
+            display: none;
         }
     </style>
 </head>
 <body>
 
+    <!-- BẢNG ĐIỀU KHIỂN & NÚT TẢI VIDEO -->
     <div id="block4-ui">
-        🎬 KHỐI 4: Video AR 360° đang xoay...
+        <!-- Nút chọn Video từ điện thoại -->
+        <button class="ui-btn" id="btn-upload">📂 Chọn Video Từ Máy</button>
+        <input type="file" id="file-input" accept="video/*">
     </div>
 
     <a-scene 
@@ -468,9 +485,8 @@ p(<!DOCTYPE html>
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
         
-        <!-- KAI BÁO TÀI NGUYÊN VIDEO (ASSETS) -->
         <a-assets>
-            <!-- Bạn có thể thay src bằng đường dẫn file video.mp4 local của bạn -->
+            <!-- Video mặc định (sẽ bị thay thế khi bạn bấm chọn video mới) -->
             <video id="ar-video" 
                    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" 
                    preload="auto" 
@@ -483,13 +499,10 @@ p(<!DOCTYPE html>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- KHI QUÉT TRÚNG TARGET 0 -->
+        <!-- ENTITY MẮT THẤY TARGET -->
         <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
             
-            <!-- VIDEO XOAY 360° DẠNG HÌNH TRỤ (CYLINDER) 
-                 - radius: Bán kính vòng xoay 360
-                 - animation: Lệnh xoay tròn liên tục 360 độ (10 giây/vòng)
-            -->
+            <!-- HÌNH TRỤ 360° CHỨA VIDEO XOAY LIÊN TỤC -->
             <a-cylinder 
                 src="#ar-video" 
                 position="0 0.5 0" 
@@ -501,45 +514,48 @@ p(<!DOCTYPE html>
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
             </a-cylinder>
 
-            <!-- TÙY CHỌN DẠNG CẦU (SPHERE 360°) - Mở comment bên dưới nếu muốn video bọc thành quả cầu
-            <a-sphere 
-                src="#ar-video" 
-                position="0 0.5 0" 
-                radius="1" 
-                rotation="0 0 0"
-                material="side: double"
-                animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear">
-            </a-sphere> 
-            -->
-
         </a-entity>
     </a-scene>
 
     <script>
-        // Xử lý tự động Phát/Dừng Video khi quét thấy Target (Tránh tốn Pin/RAM)
         document.addEventListener("DOMContentLoaded", function () {
-            const video = document.getElementById("ar-video");
+            const btnUpload = document.getElementById("btn-upload");
+            const fileInput = document.getElementById("file-input");
+            const arVideo = document.getElementById("ar-video");
             const targetEntity = document.getElementById("target-entity");
 
-            // Phát video khi thấy Target
-            targetEntity.addEventListener("targetFound", () => {
-                video.play().catch(e => console.log("Cần tương tác người dùng để phát Audio:", e));
+            // 1. Khi bấm nút "📂 Chọn Video Từ Máy" -> Mở thư viện file điện thoại
+            btnUpload.addEventListener("click", function () {
+                fileInput.click();
             });
 
-            // Tạm dừng video khi mất Target
-            targetEntity.addEventListener("targetLost", () => {
-                video.pause();
-            });
+            // 2. Khi người dùng chọn xong 1 file Video từ máy
+            fileInput.addEventListener("change", function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Tạo đường dẫn tạm thời cho video trong bộ nhớ máy
+                    const videoURL = URL.createObjectURL(file);
+                    
+                    arVideo.src = videoURL;
+                    arVideo.load();
+                    arVideo.play();
 
-            // Kích hoạt âm thanh sau lần chạm đầu tiên (Do chính sách trình duyệt)
-            window.addEventListener("click", () => {
-                if (video.paused) {
-                    video.play();
+                    btnUpload.innerText = "✅ Đã Tải Video!";
+                    btnUpload.style.borderColor = "#ff007f";
+                    btnUpload.style.color = "#ff007f";
                 }
-            }, { once: true });
+            });
+
+            // 3. Tự động Play/Pause theo Target
+            targetEntity.addEventListener("targetFound", () => {
+                arVideo.play().catch(e => console.log(e));
+            });
+
+            targetEntity.addEventListener("targetLost", () => {
+                arVideo.pause();
+            });
         });
     </script>
 
 </body>
 </html>
-
