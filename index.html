@@ -216,3 +216,144 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Khối 3: Nút Bật/Tắt Chia Đôi VR</title>
+    
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: sans-serif;
+        }
+
+        /* [KHỐI 3] BẢNG NÚT BẤM ĐIỀU KHIỂN */
+        #block3-ui {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            display: flex;
+            gap: 10px;
+        }
+
+        #btn-vr {
+            background: #00ffcc;
+            color: #000;
+            border: 2px solid #00ffcc;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+        }
+
+        #btn-vr:active {
+            transform: scale(0.92);
+        }
+
+        /* [KHỐI 3] CSS CHIA ĐÔI MÀN HÌNH BẰNG TỶ LỆ VIEWPORT */
+        body.split-vr-mode .a-canvas {
+            clip-path: inset(0 50% 0 0) !important; /* Tạo góc nhìn mắt trái */
+        }
+
+        body.split-vr-mode::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 50vw;
+            height: 100vh;
+            background: inherit;
+            z-index: 2;
+            pointer-events: none;
+            border-left: 2px solid #00ffcc; /* Đường ranh giới giữa 2 mắt */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- [KHỐI 3] NÚT BẤM CHUYỂN ĐỔI GIAO DIỆN -->
+    <div id="block3-ui">
+        <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
+    </div>
+
+    <!-- KHUNG CẢNH AR -->
+    <a-scene 
+        id="ar-scene"
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+        embedded
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
+                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+            </a-box>
+        </a-entity>
+    </a-scene>
+
+    <!-- [KHỐI 3] LOGIC BẤM NÚT CHIA ĐÔI -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const btnVR = document.getElementById("btn-vr");
+            let isVRMode = false;
+
+            btnVR.addEventListener("click", function () {
+                isVRMode = !isVRMode;
+
+                if (isVRMode) {
+                    // Bật chế độ chia đôi
+                    document.body.classList.add("split-vr-mode");
+                    btnVR.innerText = "📱 Màn Hình Đơn";
+                    btnVR.style.background = "#ff3366";
+                    btnVR.style.borderColor = "#ff3366";
+                    btnVR.style.color = "#fff";
+                } else {
+                    // Tắt chế độ chia đôi, quay về bình thường
+                    document.body.classList.remove("split-vr-mode");
+                    btnVR.innerText = "🥽 Bật Chia Đôi VR";
+                    btnVR.style.background = "#00ffcc";
+                    btnVR.style.borderColor = "#00ffcc";
+                    btnVR.style.color = "#000";
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
