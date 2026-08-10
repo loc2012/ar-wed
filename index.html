@@ -532,7 +532,6 @@
         mainLoop();
     </script>
 </body>
-</html>
 
 
 
@@ -540,167 +539,81 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3 Tracker + Khối 4 Nhân Vật Đỏ</title>
+    <title>Tracker Tích Hợp</title>
     <style>
-        html, body {
-            margin: 0; padding: 0;
-            width: 100vw; height: 100vh;
-            overflow: hidden; background: #000;
-            font-family: sans-serif;
-        }
-
-        #camera-video { display: none; }
-
-        #main-canvas {
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* HUD ĐẶT GÓC TRÁI */
-        #hud-panel {
-            position: fixed;
-            top: 10px; left: 10px;
-            z-index: 9999;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #00ffcc;
-            padding: 6px 12px;
-            border-radius: 10px;
-            color: #00ffcc;
-            font-size: 11px;
-            pointer-events: none;
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        #canvas { display: block; width: 100vw; height: 100vh; object-fit: cover; }
+        #debug { position: fixed; top: 5px; left: 5px; color: #0f0; font-size: 10px; pointer-events: none; }
     </style>
 </head>
 <body>
-
-    <div id="hud-panel">
-        <div id="hud-status" style="color: #ff0055; font-weight: bold;">🔍 ĐANG TÌM MỤC TIÊU...</div>
-        <div id="hud-coords">X: -- | Y: --</div>
-    </div>
-
-    <video id="camera-video" autoplay playsinline muted></video>
-    <canvas id="main-canvas"></canvas>
+    <div id="debug">Đang khởi động...</div>
+    <video id="vid" autoplay playsinline muted style="display:none;"></video>
+    <canvas id="canvas"></canvas>
 
     <script>
-        // 1. BIẾN TOÀN CỤC KHỐI 3
-        window.khoi3Target = { x: 0, y: 0, detected: false };
-
-        const video = document.getElementById('camera-video');
-        const canvas = document.getElementById('main-canvas');
+        const vid = document.getElementById('vid');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const debug = document.getElementById('debug');
 
-        const hudStatus = document.getElementById('hud-status');
-        const hudCoords = document.getElementById('hud-coords');
-
-        // BẬT CAMERA
+        // Bật Camera
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => { video.srcObject = stream; })
-            .catch(err => console.error("Lỗi Cam:", err));
+            .then(s => vid.srcObject = s);
 
-        function mainLoop() {
-            if (video.readyState >= 2) {
+        let targetX = 0, targetY = 0; // Biến tọa độ toàn cục
+
+        function loop() {
+            if (vid.readyState === vid.HAVE_ENOUGH_DATA) {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
 
-                // VẼ KHUNG HÌNH CAM GỐC
+                // 1. Vẽ Camera
                 ctx.save();
                 ctx.scale(-1, 1);
-                ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
                 ctx.restore();
 
-                // 2. KHỐI 3: THUẬT TOÁN BẮT MÀU XANH LÁ (ĐÃ NỚI RỘNG ĐIỀU KIỆN ĐỂ BẮT CỰC NHẠY)
-                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imgData.data;
-                let sumX = 0, sumY = 0, count = 0;
-                let step = 6; // Quét dày hơn chút
+                // 2. KHỐI 3: QUÉT MÀU XANH
+                let frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let data = frame.data;
+                let sX = 0, sY = 0, count = 0;
 
-                for (let i = 0; i < data.length; i += 4 * step) {
+                for (let i = 0; i < data.length; i += 32) { // Quét thưa cho nhanh
                     let r = data[i], g = data[i+1], b = data[i+2];
-
-                    // Điều kiện lọc màu xanh nhạy hơn nhiều trong môi trường thiếu sáng
-                    if (g > 50 && g > r * 1.1 && g > b * 1.05) {
-                        let pixelIndex = i / 4;
-                        let x = pixelIndex % canvas.width;
-                        let y = Math.floor(pixelIndex / canvas.width);
-                        sumX += x;
-                        sumY += y;
+                    if (g > 80 && g > r * 1.2 && g > b * 1.2) {
+                        let idx = i / 4;
+                        sX += (idx % canvas.width);
+                        sY += Math.floor(idx / canvas.width);
                         count++;
                     }
                 }
 
-                // CẬP NHẬT TỌA ĐỘ KHỐI 3
-                if (count > 5) {
-                    window.khoi3Target.x = Math.round(sumX / count);
-                    window.khoi3Target.y = Math.round(sumY / count);
-                    window.khoi3Target.detected = true;
-
-                    hudStatus.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
-                    hudStatus.style.color = "#00ffcc";
-                    hudCoords.innerText = `X: ${window.khoi3Target.x} | Y: ${window.khoi3Target.y}`;
-                } else {
-                    window.khoi3Target.detected = false;
-                    hudStatus.innerText = "🔍 ĐANG TÌM MỤC TIÊU...";
-                    hudStatus.style.color = "#ff0055";
-                    hudCoords.innerText = "X: -- | Y: --";
-                }
-
-                // 3. KHỐI 4: VẼ KHỐI VUÔNG ĐỎ DI CHUYỂN THEO TỌA ĐỘ KHỐI 3
-                if (window.khoi3Target.detected) {
-                    let targetX = window.khoi3Target.x;
-                    let targetY = window.khoi3Target.y;
-                    let size = 80; // Size khối đỏ 80px
-
-                    // Vẽ Khối Đỏ
-                    ctx.fillStyle = "#ff0000";
-                    ctx.fillRect(targetX - size / 2, targetY - size / 2, size, size);
-
-                    // Khung viền vàng nổi bật
-                    ctx.strokeStyle = "#ffff00";
+                // 3. KHỐI 4: GỌI NHÂN VẬT & DI CHUYỂN
+                if (count > 20) {
+                    targetX = sX / count;
+                    targetY = sY / count;
+                    debug.innerText = "Đang bắt mục tiêu...";
+                    
+                    // Vẽ Nhân vật (Khối vuông đỏ)
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(targetX - 40, targetY - 40, 80, 80); // Kích thước 80x80
+                    
+                    // Vẽ viền nhân vật
+                    ctx.strokeStyle = "yellow";
                     ctx.lineWidth = 4;
-                    ctx.strokeRect(targetX - size / 2, targetY - size / 2, size, size);
-
-                    // Chấm tâm màu trắng
-                    ctx.beginPath();
-                    ctx.arc(targetX, targetY, 5, 0, 2 * Math.PI);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fill();
+                    ctx.strokeRect(targetX - 40, targetY - 40, 80, 80);
+                } else {
+                    debug.innerText = "Không thấy mục tiêu";
                 }
             }
-
-            requestAnimationFrame(mainLoop);
+            requestAnimationFrame(loop);
         }
-
-        requestAnimationFrame(mainLoop);
+        loop();
     </script>
 </body>
 </html>
