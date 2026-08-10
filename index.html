@@ -287,34 +287,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3: Core Tracking & Local Video Input</title>
+    <title>Khối 3: Chấm Đỏ & Bảng Tọa Độ Realtime</title>
     <style>
         html, body {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             overflow: hidden; background: #000;
-            font-family: sans-serif;
+            font-family: monospace, sans-serif;
         }
 
-        /* Input chọn video ẩn ngầm */
-        #video-file-input, #raw-video { display: none; }
-
-        /* CANVAS HỢP NHẤT KHỐI 3 */
+        /* CANVAS HỢP NHẤT KHỐI 3 (XUẤT CHO KHỐI 2) */
         #khoi3-output-canvas {
             width: 100vw;
             height: 100vh;
@@ -322,8 +309,26 @@
             display: block;
         }
 
-        /* THANH ĐIỀU CHỈNH & NÚT CHỌN VIDEO */
-        #ui-panel {
+        /* BẢNG BÁO THÔNG SỐ TỌA ĐỘ (HUD) */
+        #hud-panel {
+            position: fixed;
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #ff0055;
+            padding: 10px 20px;
+            border-radius: 15px;
+            color: #00ffcc;
+            font-size: 13px;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
+            text-align: center;
+            line-height: 1.6;
+            white-space: nowrap;
+        }
+
+        /* THANH CHỈNH KÍCH CỠ CHẤM ĐỎ */
+        #control-panel {
             position: fixed;
             bottom: 20px; left: 50%;
             transform: translateX(-50%);
@@ -331,91 +336,55 @@
             background: rgba(0, 0, 0, 0.85);
             border: 1px solid #00ffcc;
             padding: 8px 16px;
-            border-radius: 25px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
             color: #00ffcc;
             font-size: 12px;
             font-weight: bold;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
-            white-space: nowrap;
         }
 
         #size-slider {
-            width: 80px;
-            accent-color: #00ffcc;
+            width: 100px;
+            accent-color: #ff0055;
             cursor: pointer;
-        }
-
-        /* NÚT CHỌN VIDEO TỪ MÁY */
-        #btn-select-video {
-            background: #00ffcc; 
-            color: #000;
-            border: none; 
-            padding: 6px 12px;
-            border-radius: 15px; 
-            font-weight: bold; 
-            font-size: 11px;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-
-        #btn-select-video:active {
-            transform: scale(0.95);
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-panel">
-        <span id="status-text">🔍 ĐANG TÌM ĐÈN...</span>
-        <span>| Zoom:</span>
-        <input type="range" id="size-slider" min="0.5" max="4.0" step="0.1" value="1.5">
-        
-        <!-- NÚT CHỌN VIDEO TỪ ĐIỆN THOẠI/MÁY TÍNH -->
-        <button id="btn-select-video">🎬 Chọn Video Từ Máy</button>
-        <input type="file" id="video-file-input" accept="video/*">
+    <!-- BẢNG THÔNG SỐ TỌA ĐỘ THỜI GIAN THỰC -->
+    <div id="hud-panel">
+        <div id="status-text" style="color: #ff0055; font-weight: bold;">🔍 ĐANG TÌM ĐÈN...</div>
+        <div id="coords-text">Tọa độ: X = -- | Y = --</div>
+        <div id="stats-text">Điểm sáng: 0 px | Bán kính: 0 px</div>
     </div>
 
-    <!-- VIDEO NGUỒN CHẠY ẨN (MẶC ĐỊNH LÀ LINK MẪU, KHI CHỌN FILE SẼ THAY THẾ) -->
-    <video id="raw-video" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" autoplay loop muted playsinline></video>
+    <!-- THANH TRUỘT CHỈNH KÍCH CỠ CHẤM ĐỎ -->
+    <div id="control-panel">
+        <span>To/Nhỏ Chấm Đỏ:</span>
+        <input type="range" id="size-slider" min="0.5" max="5.0" step="0.1" value="2.0">
+    </div>
 
     <!-- CANVAS ĐẦU RA CỦA KHỐI 3 -->
     <canvas id="khoi3-output-canvas"></canvas>
 
     <script>
-        let webcamElement = null; // Tự liên kết Cam Khối 1
-        const sourceVideo = document.getElementById('raw-video');
+        let webcamElement = null; // Dùng chung Cam với Khối 1
         const canvas = document.getElementById('khoi3-output-canvas');
         const ctx = canvas.getContext('2d');
         const slider = document.getElementById('size-slider');
+
         const statusText = document.getElementById('status-text');
-        
-        const btnSelectVideo = document.getElementById('btn-select-video');
-        const fileInput = document.getElementById('video-file-input');
+        const coordsText = document.getElementById('coords-text');
+        const statsText = document.getElementById('stats-text');
 
-        // SỰ KIỆN CHỌN VIDEO TỪ BỘ NHỚ MÁY
-        btnSelectVideo.addEventListener('click', () => {
-            fileInput.click(); // Mở cửa sổ chọn file của điện thoại/máy tính
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const videoURL = URL.createObjectURL(file);
-                sourceVideo.src = videoURL;
-                sourceVideo.play();
-                statusText.innerText = "✅ ĐÃ TẢI VIDEO MỚI!";
-                statusText.style.color = "#00ffcc";
-            }
-        });
-
-        // TỰ ĐỘNG DÙNG CHUNG CAM CỦA KHỐI 1
+        // TỰ ĐỘNG TÌM VÀ DÙNG CHUNG CAM CỦA KHỐI 1 (TRÁNH LỖI ĐỎ BẬT CAM)
         function findAndShareCamera() {
             const allVideos = document.querySelectorAll('video');
             for (let vid of allVideos) {
-                if (vid.id !== 'raw-video' && (vid.srcObject || vid.currentTime > 0)) {
+                if (vid.srcObject || vid.currentTime > 0) {
                     webcamElement = vid;
                     return true;
                 }
@@ -423,7 +392,7 @@
             return false;
         }
 
-        // VÒNG LẶP XỬ LÝ KHỐI 3
+        // VÒNG LẶP XỬ LÝ CHẤM ĐỎ & TỌA ĐỘ
         function processKhoi3() {
             if (!webcamElement) {
                 findAndShareCamera();
@@ -439,12 +408,12 @@
                 ctx.drawImage(webcamElement, -canvas.width, 0, canvas.width, canvas.height);
                 ctx.restore();
 
-                // 2. Phân tích điểm màu Xanh
+                // 2. Lọc điểm sáng Xanh
                 const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imgData.data;
 
                 let sumX = 0, sumY = 0, count = 0;
-                let step = 8;
+                let step = 6; // Bước nhảy lọc pixel siêu nhẹ
 
                 for (let i = 0; i < data.length; i += 4 * step) {
                     let r = data[i], g = data[i+1], b = data[i+2];
@@ -459,30 +428,43 @@
                     }
                 }
 
-                // 3. Đè Video đã chọn vào đúng điểm Đèn Xanh
+                // 3. VẼ CHẤM ĐỎ VÀ CẬP NHẬT TỌA ĐỘ
                 if (count > 3) {
-                    let avgX = sumX / count;
-                    let avgY = sumY / count;
+                    let avgX = Math.round(sumX / count);
+                    let avgY = Math.round(sumY / count);
 
+                    // Tính bán kính Chấm Đỏ = (Căn diện tích) x (Slider)
                     let scaleMultiplier = parseFloat(slider.value);
-                    let videoW = Math.min(Math.max(Math.sqrt(count * step) * 8 * scaleMultiplier, 100), 800);
-                    let videoH = videoW * (9 / 16);
+                    let radius = Math.min(Math.max(Math.sqrt(count * step) * 2 * scaleMultiplier, 15), 200);
 
-                    let drawX = avgX - (videoW / 2);
-                    let drawY = avgY - (videoH / 2);
+                    // --- VẼ CHẤM ĐỎ NEON TO ĐÙNG ---
+                    ctx.beginPath();
+                    ctx.arc(avgX, avgY, radius, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = '#ff0055';
+                    ctx.shadowColor = '#ff0055';
+                    ctx.shadowBlur = 25; // Hiệu ứng phát sáng Neon
+                    ctx.fill();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.stroke();
 
-                    if (sourceVideo.readyState >= 2) {
-                        ctx.drawImage(sourceVideo, drawX, drawY, videoW, videoH);
-                        ctx.strokeStyle = "#00ffcc";
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(drawX, drawY, videoW, videoH);
-                    }
+                    // Chấm trắng tâm điểm chính giữa
+                    ctx.beginPath();
+                    ctx.arc(avgX, avgY, 5, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
 
-                    statusText.innerText = "⚡ KHÓA ĐÈN (" + Math.round(videoW) + "px)";
+                    // --- CẬP NHẬT BẢNG THÔNG SỐ REALTIME ---
+                    statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
                     statusText.style.color = "#00ffcc";
+                    coordsText.innerText = `Tọa độ (X, Y): X = ${avgX} px | Y = ${avgY} px`;
+                    statsText.innerText = `Diện tích: ${count} px | Bán kính: ${Math.round(radius)} px`;
                 } else {
+                    // Trạng thái khi không thấy đèn
                     statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
                     statusText.style.color = "#ff0055";
+                    coordsText.innerText = `Tọa độ (X, Y): -- , --`;
+                    statsText.innerText = `Diện tích: 0 px | Bán kính: 0 px`;
                 }
             }
 
@@ -493,4 +475,5 @@
     </script>
 </body>
 </html>
-
+ 
+    
