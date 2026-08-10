@@ -418,7 +418,7 @@
                 for (let i = 0; i < data.length; i += 4 * step) {
                     let r = data[i], g = data[i+1], b = data[i+2];
 
-                    if (g > 80 && g > r * 1.25 && g > b * 1.1) {
+                    if (g > 20 && g > r * 1.25 && g > b * 1.1) {
                         let pixelIndex = i / 4;
                         let x = pixelIndex % canvas.width;
                         let y = Math.floor(pixelIndex / canvas.width);
