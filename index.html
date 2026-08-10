@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+(<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -150,13 +150,16 @@
     <!-- KHUNG CẢNH AR (TỐI ƯU ĐỘ NHẠY TỐI ĐA) -->
     <!-- Mẹo tăng độ nhạy: filterMinCF: 0.0001, filterBeta: 0.001, missTolerance: 5 -->
     <a-scene 
+            <!-- KHUNG CẢNH AR (TỐI ƯU ĐỘ NHẠY VÀ THỜI GIAN CHỜ) -->
+    <a-scene 
         id="ar-scene"
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;" 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no; warmupTolerance: 10; missTolerance: 10;" 
         embedded
         color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights"
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
+
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
