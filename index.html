@@ -296,3 +296,186 @@
 
 
 
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Khối 3: Core Tracking (Chống Tranh Cam)</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; background: #000;
+            font-family: sans-serif;
+        }
+
+        /* Cam phụ & Video nguồn chạy ẩn */
+        #raw-video { display: none; }
+
+        /* CANVAS HỢP NHẤT KHỐI 3 (ĐẦU RA CHO KHỐI 2) */
+        #khoi3-output-canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* UI PANEL PANEL DƯỚI MÀN HÌNH */
+        #ui-panel {
+            position: fixed;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #00ffcc;
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00ffcc;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            white-space: nowrap;
+        }
+
+        #size-slider {
+            width: 80px;
+            accent-color: #00ffcc;
+            cursor: pointer;
+        }
+
+        #btn-download {
+            background: #00ffcc; color: #000;
+            border: none; padding: 5px 10px;
+            border-radius: 12px; font-weight: bold; font-size: 11px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <span id="status-text">🔍 ĐANG LẤY CAM KHỐI 1...</span>
+        <span>| Zoom:</span>
+        <input type="range" id="size-slider" min="0.5" max="4.0" step="0.1" value="1.5">
+        <button id="btn-download">💾 Tải khoi3.html</button>
+    </div>
+
+    <!-- VIDEO NGUỒN ĐỂ ĐÈ LÊN ĐÈN -->
+    <video id="raw-video" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" autoplay loop muted playsinline></video>
+
+    <!-- CANVAS ĐẦU RA CỦA KHỐI 3 -->
+    <canvas id="khoi3-output-canvas"></canvas>
+
+    <script>
+        let webcamElement = null; // Sẽ tự động liên kết với Cam của Khối 1
+        const sourceVideo = document.getElementById('raw-video');
+        const canvas = document.getElementById('khoi3-output-canvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('size-slider');
+        const statusText = document.getElementById('status-text');
+        const btnDownload = document.getElementById('btn-download');
+
+        // NÚT TẢI FILE KHOI3
+        btnDownload.addEventListener('click', () => {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'khoi3.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // TỰ ĐỘNG TÌM VÀ DÙNG CHUNG CAM CỦA KHỐI 1 (KHÔNG TỰ BẬT CAM NỮA)
+        function findAndShareCamera() {
+            // Tìm thẻ <video> đang phát của Khối 1 trên trang
+            const allVideos = document.querySelectorAll('video');
+            for (let vid of allVideos) {
+                if (vid.id !== 'raw-video' && (vid.srcObject || vid.currentTime > 0)) {
+                    webcamElement = vid;
+                    statusText.innerText = "✅ ĐÃ KẾT NỐI CAM KHỐI 1";
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // VÒNG LẶP PHÂN TÍCH VÀ ĐÈ VIDEO (KHỐI 3)
+        function processKhoi3() {
+            if (!webcamElement) {
+                findAndShareCamera(); // Tìm Cam Khối 1 nếu chưa thấy
+            }
+
+            if (webcamElement && webcamElement.readyState >= 2) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                // 1. Lấy khung hình từ Cam Khối 1 vẽ lên Canvas Khối 3
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.drawImage(webcamElement, -canvas.width, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                // 2. Phân tích điểm màu Xanh
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+
+                let sumX = 0, sumY = 0, count = 0;
+                let step = 8;
+
+                for (let i = 0; i < data.length; i += 4 * step) {
+                    let r = data[i], g = data[i+1], b = data[i+2];
+
+                    if (g > 80 && g > r * 1.25 && g > b * 1.1) {
+                        let pixelIndex = i / 4;
+                        let x = pixelIndex % canvas.width;
+                        let y = Math.floor(pixelIndex / canvas.width);
+                        sumX += x;
+                        sumY += y;
+                        count++;
+                    }
+                }
+
+                // 3. Đè Video vào đúng điểm màu Xanh
+                if (count > 3) {
+                    let avgX = sumX / count;
+                    let avgY = sumY / count;
+
+                    let scaleMultiplier = parseFloat(slider.value);
+                    let videoW = Math.min(Math.max(Math.sqrt(count * step) * 8 * scaleMultiplier, 100), 800);
+                    let videoH = videoW * (9 / 16);
+
+                    let drawX = avgX - (videoW / 2);
+                    let drawY = avgY - (videoH / 2);
+
+                    if (sourceVideo.readyState >= 2) {
+                        ctx.drawImage(sourceVideo, drawX, drawY, videoW, videoH);
+                        ctx.strokeStyle = "#00ffcc";
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(drawX, drawY, videoW, videoH);
+                    }
+
+                    statusText.innerText = "⚡ KHÓA ĐÈN (" + Math.round(videoW) + "px)";
+                    statusText.style.color = "#00ffcc";
+                } else {
+                    statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
+                    statusText.style.color = "#ff0055";
+                }
+            }
+
+            requestAnimationFrame(processKhoi3);
+        }
+
+        // Bắt đầu vòng lặp xử lý
+        requestAnimationFrame(processKhoi3);
+    </script>
+</body>
+</html>
