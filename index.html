@@ -303,10 +303,9 @@
 
 
 
- 
-    
+
 // =========================================================================
-    // KHỐI 3: VẼ NHÂN VẬT & QUÉT TỌA ĐỘ MÀU XANH LÁ (SIÊU NHẠY)
+    // KHỐI 3: VẼ NHÂN VẬT & QUÉT TỌA ĐỘ MÀU XANH NGỌC/TEAL (BẢN SỬA LỖI)
     // =========================================================================
 
     // 1. HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ (X, Y)
@@ -351,16 +350,17 @@
             let sumX = 0;
             let sumY = 0;
             let count = 0;
-            let step = 6; // Bước nhảy để tối ưu hiệu năng, tránh giật lag
+            let step = 6; // Bước nhảy để tối ưu hiệu năng
 
-            // --- QUÉT MÀU XANH SIÊU THÔNG THOÁNG ---
+            // --- THUẬT TOÁN QUÉT MÀU XANH NGỌC (TEAL) ---
             for (let i = 0; i < data.length; i += 4 * step) {
                 let r = data[i];
                 let g = data[i + 1];
                 let b = data[i + 2];
 
-                // Bắt mọi sắc xanh lá, kể cả khi góc tối hoặc bị bóng đè lên
-                if (g > 20 && g > r * 0.9) {
+                // ĐIỀU KIỆN MỚI (Dành riêng cho Xanh Ngọc):
+                // Chỉ cần Xanh dương mạnh, Xanh lá cũng tương đối mạnh, và Đỏ phải yếu
+                if (b > 100 && g > 90 && r < 90) {
                     let pixelIndex = i / 4;
                     let x = pixelIndex % canvas.width;
                     let y = Math.floor(pixelIndex / canvas.width);
@@ -373,27 +373,27 @@
 
             // --- XỬ LÝ KẾT QUẢ QUÉT MÀU ---
             if (count > 3) {
-                // 1. Tính tọa độ trung tâm X, Y của vùng màu xanh
+                // Tính tọa độ trung tâm X, Y của vùng màu
                 let avgX = Math.round(sumX / count);
                 let avgY = Math.round(sumY / count);
 
-                // 2. GỌI HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ ĐÃ XÁC ĐỊNH
+                // GỌI HÀM VẼ NHÂN VẬT ĐỀ LÊN
                 drawCharacter(avgX, avgY);
 
-                // 3. Cập nhật Bảng thông số HUD trên màn hình
-                statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
+                // Cập nhật Bảng HUD
+                statusText.innerText = "⚡ ĐÃ KHÓA XANH NGỌC";
                 statusText.style.color = "#00ffcc";
-                coordsText.innerText = `Tọa độ (X, Y): X = ${avgX} px | Y = ${avgY} px`;
+                coordsText.innerText = `X = ${avgX} px | Y = ${avgY} px`;
                 statsText.innerText = `Diện tích: ${count} px`;
             } else {
-                // Không tìm thấy màu xanh trong khung hình
-                statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
+                // Không tìm thấy màu xanh ngọc
+                statusText.innerText = "🔍 TÌM XANH NGỌC...";
                 statusText.style.color = "#ff0055";
-                coordsText.innerText = `Tọa độ (X, Y): -- , --`;
+                coordsText.innerText = `Tọa độ: -- , --`;
                 statsText.innerText = `Diện tích: 0 px`;
             }
         }
 
-        // Tạo vòng lặp liên tục redraw theo tần số quét màn hình
+        // Vòng lặp liên tục redraw
         requestAnimationFrame(processKhoi3);
     }
