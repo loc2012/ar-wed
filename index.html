@@ -447,13 +447,87 @@
                     ctx.lineWidth = 4;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
-                    // --- VẼ KHỐI VUÔNG ĐỎ ---
-                    let size = 100;
-                    ctx.fillStyle = "#ff0000";
-                    ctx.fillRect(avgX - size / 2, avgY - size / 2, size, size);
-                    ctx.strokeStyle = "#ffff00";
-                    ctx.lineWidth = 5;
-                    ctx.strokeRect(avgX - size / 2, avgY - size / 2, size, size);
+                // 1. HÀM CHUYÊN VẼ NHÂN VẬT (KHỐI VUÔNG ĐỎ) TẠI TỌA ĐỘ (X, Y)
+    function drawCharacter(x, y) {
+        let size = 100;
+
+        // Vẽ Khối vuông đỏ
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+
+        // Vẽ Viền vàng
+        ctx.strokeStyle = "#ffff00";
+        ctx.lineWidth = 5;
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+
+        // Vẽ Tâm chấm trắng chính giữa nhân vật
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI, false);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+    }
+
+    // 2. HÀM VÒNG LẬP CHÍNH: XỬ LÝ CAMERA & GỌI HÀM VẼ NHÂN VẬT
+    function processKhoi3() {
+        if (!webcamElement) {
+            findAndShareCamera();
+        }
+
+        if (webcamElement && webcamElement.readyState >= 2) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Lấy khung hình và lật camera
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(webcamElement, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // Quét tìm điểm màu xanh
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+
+            let sumX = 0, sumY = 0, count = 0;
+            let step = 6; 
+
+            for (let i = 0; i < data.length; i += 4 * step) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+
+                // Điều kiện bắt màu xanh nhạy (g > 20)
+                if (g > 20 && g > r) {
+                    let pixelIndex = i / 4;
+                    let x = pixelIndex % canvas.width;
+                    let y = Math.floor(pixelIndex / canvas.width);
+                    sumX += x;
+                    sumY += y;
+                    count++;
+                }
+            }
+
+            // Nếu bắt được mục tiêu -> Gọi hàm vẽ nhân vật
+            if (count > 3) {
+                let avgX = Math.round(sumX / count);
+                let avgY = Math.round(sumY / count);
+
+                // --- GỌI HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ ĐÃ TÍNH ---
+                drawCharacter(avgX, avgY);
+
+                // Cập nhật Bảng HUD
+                statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
+                statusText.style.color = "#00ffcc";
+                coordsText.innerText = `Tọa độ (X, Y): X = ${avgX} px | Y = ${avgY} px`;
+                statsText.innerText = `Diện tích: ${count} px`;
+            } else {
+                statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
+                statusText.style.color = "#ff0055";
+                coordsText.innerText = `Tọa độ (X, Y): -- , --`;
+                statsText.innerText = `Diện tích: 0 px`;
+            }
+        }
+
+        // Vòng lặp liên tục redraw
+        requestAnimationFrame(processKhoi3);
+    }
 
                     // CẬP NHẬT BẢNG THÔNG SỐ REALTIME
                     statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
