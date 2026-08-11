@@ -304,17 +304,18 @@
 
 
 
-// =========================================================================
-    // KHỐI 3: KHAI BÁO & QUÉT TỌA ĐỘ MÀU (TRẢ VỀ dienx, dieny)
+<script>
+    // =========================================================================
+    // KHỐI 3: KHAI BÁO & QUÉT TỌA ĐỘ MÀU (dienx, dieny)
     // =========================================================================
 
-    // 1. KHAI BÁO BIẾN TOÀN CỤC
+    /* 1. KHAI BÁO BIẾN TOÀN CỤC */
     let dienx = 0;
     let dieny = 0;
 
 
-    // =========================================================================
- <!DOCTYPE html>
+    /* =========================================================================
+  <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -425,52 +426,51 @@
 
 </body>
 </html>
-    // =========================================================================
+    ========================================================================= */
     function codeCuaBan(dienx, dieny) {
         
-        // 🔥 GÕ CODE CỦA BẠN VÀO DƯỚI DÒNG NÀY:
+        /* 🔥 GÕ CODE CỦA BẠN VÀO DƯỚI DÒNG NÀY: */
         if (dienx > 0 && dieny > 0) {
             
-            // Ví dụ thử nghiệm (Bạn xoá dán code bạn vào đây):
+            /* Ví dụ thử nghiệm (Bạn xóa dán code bạn vào đây): */
             // ctx.fillStyle = "red";
             // ctx.fillRect(dienx - 25, dieny - 25, 50, 50);
 
         }
 
     }
-    // =========================================================================
+    /* ========================================================================= */
 
 
-    // 3. HÀM XỬ LÝ CAMERA & QUÉT MÀU (ĐÃ BỌC TỰ ĐỘNG CALL CODE CỦA BẠN)
+    /* 3. HÀM XỬ LÝ CAMERA & QUÉT MÀU */
     function processKhoi3() {
         if (!webcamElement) {
             findAndShareCamera();
         }
 
         if (webcamElement && webcamElement.readyState >= 2) {
-            // Khớp kích thước Canvas với màn hình
+            /* Khớp kích thước Canvas */
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            // Render hình ảnh camera lên Canvas
+            /* Render camera */
             ctx.drawImage(webcamElement, 0, 0, canvas.width, canvas.height);
 
-            // Đọc dữ liệu điểm ảnh (Pixels)
+            /* Đọc dữ liệu điểm ảnh (Pixels) */
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
 
             let sumX = 0;
             let sumY = 0;
             let count = 0;
-            let step = 6; // Bước nhảy quét pixel
+            let step = 6;
 
-            // Quét tìm pixel màu xanh
+            /* Quét tìm pixel màu xanh */
             for (let i = 0; i < data.length; i += 4 * step) {
                 let r = data[i];
                 let g = data[i + 1];
                 let b = data[i + 2];
 
-                // Điều kiện bắt mọi sắc xanh lá / xanh ngọc
                 if (g > 20 && g > r * 0.9) {
                     let pixelIndex = i / 4;
                     let x = pixelIndex % canvas.width;
@@ -482,18 +482,16 @@
                 }
             }
 
-            // Xử lý tọa độ thu được
+            /* Xử lý tọa độ thu được */
             if (count > 3) {
                 dienx = Math.round(sumX / count);
                 dieny = Math.round(sumY / count);
 
-                // Cập nhật Bảng thông số HUD
                 statusText.innerText = "⚡ ĐÃ KHÓA MÀU XANH";
                 statusText.style.color = "#00ffcc";
                 coordsText.innerText = `dienx = ${dienx} px | dieny = ${dieny} px`;
                 statsText.innerText = `Diện tích: ${count} px`;
             } else {
-                // Không thấy màu xanh -> Trả về 0
                 dienx = 0;
                 dieny = 0;
 
@@ -503,10 +501,11 @@
                 statsText.innerText = `Diện tích: 0 px`;
             }
 
-            // 🚀 TỰ ĐỘNG GỌI HÀM CODE CỦA BẠN VÀ TRUYỀN TỌA ĐỘ VÀO
+            /* TỰ ĐỘNG GỌI HÀM CODE CỦA BẠN VÀ TRUYỀN TỌA ĐỘ VÀO */
             codeCuaBan(dienx, dieny);
         }
 
-        // Vòng lặp vẽ liên tục
+        /* Vòng lặp vẽ liên tục */
         requestAnimationFrame(processKhoi3);
     }
+</script>
