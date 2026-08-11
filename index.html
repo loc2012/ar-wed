@@ -890,3 +890,304 @@
  
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Video Editor</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #222;
+        color: white;
+    }
+
+    .toolbar {
+        padding: 15px;
+        background: #333;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .toolbar input[type="number"] {
+        width: 70px;
+        padding: 6px;
+    }
+
+    .toolbar input[type="range"] {
+        width: 180px;
+    }
+
+    button {
+        padding: 8px 15px;
+        cursor: pointer;
+    }
+
+    .stage {
+        position: relative;
+        width: 800px;
+        height: 500px;
+        margin: 20px auto;
+        background: #111;
+        overflow: hidden;
+        border: 2px solid #555;
+    }
+
+    #video {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 300px;
+        cursor: move;
+        user-select: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="toolbar">
+
+    <input
+        type="file"
+        id="fileInput"
+        accept="video/*"
+    >
+
+    <label>
+        X:
+        <input type="number" id="posX" value="0">
+    </label>
+
+    <label>
+        Y:
+        <input type="number" id="posY" value="0">
+    </label>
+
+    <label>
+        Kích cỡ:
+        <input
+            type="range"
+            id="size"
+            min="50"
+            max="1000"
+            value="300"
+        >
+        <span id="sizeValue">300px</span>
+    </label>
+
+    <button id="downloadBtn">
+        Tải file
+    </button>
+
+</div>
+
+<div class="stage" id="stage">
+
+    <video
+        id="video"
+        controls
+        playsinline
+    ></video>
+
+</div>
+
+
+<script>
+
+const fileInput = document.getElementById("fileInput");
+const video = document.getElementById("video");
+
+const posX = document.getElementById("posX");
+const posY = document.getElementById("posY");
+
+const size = document.getElementById("size");
+const sizeValue = document.getElementById("sizeValue");
+
+const stage = document.getElementById("stage");
+const downloadBtn = document.getElementById("downloadBtn");
+
+
+// ===============================
+// TẢI VIDEO LÊN
+// ===============================
+
+fileInput.addEventListener("change", function () {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+
+    video.src = url;
+    video.load();
+
+});
+
+
+// ===============================
+// CẬP NHẬT VỊ TRÍ
+// ===============================
+
+function updatePosition() {
+
+    video.style.left = posX.value + "px";
+    video.style.top = posY.value + "px";
+
+}
+
+posX.addEventListener("input", updatePosition);
+posY.addEventListener("input", updatePosition);
+
+
+// ===============================
+// CHỈNH KÍCH CỠ
+// ===============================
+
+size.addEventListener("input", function () {
+
+    const value = this.value;
+
+    video.style.width = value + "px";
+
+    sizeValue.textContent = value + "px";
+
+});
+
+
+// ===============================
+// KÉO VIDEO BẰNG CHUỘT
+// ===============================
+
+let dragging = false;
+
+let offsetX = 0;
+let offsetY = 0;
+
+
+video.addEventListener("mousedown", function (e) {
+
+    dragging = true;
+
+    offsetX =
+        e.clientX - video.offsetLeft;
+
+    offsetY =
+        e.clientY - video.offsetTop;
+
+});
+
+
+document.addEventListener("mousemove", function (e) {
+
+    if (!dragging) return;
+
+    const x =
+        e.clientX -
+        stage.getBoundingClientRect().left -
+        offsetX;
+
+    const y =
+        e.clientY -
+        stage.getBoundingClientRect().top -
+        offsetY;
+
+    posX.value = Math.round(x);
+    posY.value = Math.round(y);
+
+    updatePosition();
+
+});
+
+
+document.addEventListener("mouseup", function () {
+
+    dragging = false;
+
+});
+
+
+// ===============================
+// NÚT TẢI FILE
+// ===============================
+
+downloadBtn.addEventListener("click", function () {
+
+    const file = fileInput.files[0];
+
+    if (!file) {
+
+        alert("Hãy tải video lên trước!");
+
+        return;
+
+    }
+
+    const url = URL.createObjectURL(file);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+
+    a.download = file.name;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    a.remove();
+
+    setTimeout(() => {
+
+        URL.revokeObjectURL(url);
+
+    }, 1000);
+
+});
+
+</script>
+
+</body>
+</html>
+```
