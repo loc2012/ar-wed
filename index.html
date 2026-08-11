@@ -320,82 +320,94 @@
 
 
 
-// 1. HÀM VẼ NHÂN VẬT (Khối vuông đỏ viền vàng tại tọa độ X, Y)
-    function drawCharacter(x, y) {
-        let size = 90; // Kích thước khối vuông
+// =========================================================================
+    // KHỐI 3: VẼ NHÂN VẬT & QUÉT TỌA ĐỘ MÀU XANH LÁ (FULL ĐẦY ĐỦ)
+    // =========================================================================
 
-        // Vẽ khối vuông đỏ
+    // 1. HÀM CHUYÊN VẼ NHÂN VẬT TẠI TỌA ĐỘ (X, Y)
+    function drawCharacter(x, y) {
+        let size = 90; // Kích thước khối vuông nhân vật
+
+        // Vẽ Khối vuông đỏ
         ctx.fillStyle = "#ff0000";
         ctx.fillRect(x - size / 2, y - size / 2, size, size);
 
-        // Vẽ viền vàng phát sáng
+        // Vẽ Viền vàng phát sáng
         ctx.strokeStyle = "#ffff00";
         ctx.lineWidth = 4;
         ctx.strokeRect(x - size / 2, y - size / 2, size, size);
 
-        // Vẽ tâm chấm trắng chính giữa
+        // Vẽ Tâm chấm trắng chính giữa
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, 2 * Math.PI, false);
         ctx.fillStyle = "#ffffff";
         ctx.fill();
     }
 
-    // 2. HÀM XỬ LÝ CAMERA & QUÉT TỌA ĐỘ MÀU XANH LÁ
+    // 2. HÀM VÒNG LẬP CHÍNH: QUÉT CAMERA, TÍNH TỌA ĐỘ VÀ VẼ NHÂN VẬT
     function processKhoi3() {
+        // Kiểm tra & Khởi động Camera nếu chưa bật
         if (!webcamElement) {
             findAndShareCamera();
         }
 
         if (webcamElement && webcamElement.readyState >= 2) {
+            // Khớp kích thước Canvas với màn hình thiết bị
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            // Vẽ khung hình từ Camera lên Canvas (giữ nguyên không lật)
+            // Render khung hình camera lên Canvas (giữ nguyên không lật)
             ctx.drawImage(webcamElement, 0, 0, canvas.width, canvas.height);
 
-            // Đọc dữ liệu điểm ảnh (Pixels)
+            // Trích xuất dữ liệu điểm ảnh (Pixels)
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
 
             let sumX = 0;
             let sumY = 0;
             let count = 0;
-            let step = 6; // Quét cách bước để chạy mượt, không lag
+            let step = 6; // Bước nhảy để tối ưu hiệu năng, tránh giật lag
 
-            // Duyệt từng pixel tìm màu Xanh Lá
+            // --- THUẬT TOÁN QUÉT MÀU XANH SIÊU NHẠY ---
             for (let i = 0; i < data.length; i += 4 * step) {
                 let r = data[i];
                 let g = data[i + 1];
                 let b = data[i + 2];
 
-                // Điều kiện: Chỉ cần kênh Xanh Lá (G) sáng hơn Xanh Dương (B) và Đỏ (R)
-                if (g > 20 && g > r && g > b) {
+                // Tính phần trăm kênh màu Xanh Lá (G)
+                let total = r + g + b;
+                if (total === 0) total = 1; // Chống lỗi chia cho 0
+
+                let percentG = (g / total) * 100;
+
+                // ĐIỀU KIỆN: Chỉ cần kênh G > 15, chiếm trên 35% tổng màu và sáng hơn R, B
+                if (g > 15 && percentG > 35 && g > r && g > b) {
                     let pixelIndex = i / 4;
                     let x = pixelIndex % canvas.width;
                     let y = Math.floor(pixelIndex / canvas.width);
-                    
+
                     sumX += x;
                     sumY += y;
                     count++;
                 }
             }
 
-            // Nếu tìm thấy mảng màu xanh lá (ít nhất 3 pixels)
+            // --- XỬ LÝ KẾT QUẢ QUÉT MÀU ---
             if (count > 3) {
-                // Tính tọa độ trung tâm X, Y
+                // 1. Tính tọa độ trung tâm X, Y của vùng màu xanh
                 let avgX = Math.round(sumX / count);
                 let avgY = Math.round(sumY / count);
 
-                // GỌI HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ BẮT ĐƯỢC
+                // 2. GỌI HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ ĐÃ XÁC ĐỊNH
                 drawCharacter(avgX, avgY);
 
-                // Cập nhật bảng thông số HUD
+                // 3. Cập nhật Bảng thông số HUD trên màn hình
                 statusText.innerText = "⚡ ĐÃ KHÓA MỤC TIÊU";
                 statusText.style.color = "#00ffcc";
                 coordsText.innerText = `Tọa độ (X, Y): X = ${avgX} px | Y = ${avgY} px`;
                 statsText.innerText = `Diện tích: ${count} px`;
             } else {
-                // Không thấy màu xanh
+                // Không tìm thấy màu xanh trong khung hình
                 statusText.innerText = "🔍 ĐANG TÌM ĐÈN...";
                 statusText.style.color = "#ff0055";
                 coordsText.innerText = `Tọa độ (X, Y): -- , --`;
@@ -403,6 +415,6 @@
             }
         }
 
-        // Lặp lại liên tục
+        // Tạo vòng lặp liên tục redraw theo tần số quét màn hình
         requestAnimationFrame(processKhoi3);
     }
