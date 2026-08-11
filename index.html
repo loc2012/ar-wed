@@ -929,36 +929,25 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Video - Tọa độ dấu chấm</title>
+<title>Video đi theo chấm đỏ</title>
 
 <style>
     body {
         margin: 0;
-        font-family: Arial, sans-serif;
         background: #222;
         color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
     }
 
     .toolbar {
         padding: 15px;
         background: #333;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-
-    .toolbar input[type="number"] {
-        width: 70px;
-        padding: 6px;
-    }
-
-    .toolbar input[type="range"] {
-        width: 180px;
     }
 
     button {
-        padding: 8px 15px;
+        padding: 12px 25px;
+        font-size: 16px;
         cursor: pointer;
     }
 
@@ -968,35 +957,37 @@
         height: 500px;
         margin: 20px auto;
         background: #111;
-        overflow: hidden;
         border: 2px solid #555;
+        overflow: hidden;
     }
 
     /* VIDEO */
     #video {
         position: absolute;
+        width: 300px;
         left: 0;
         top: 0;
-        width: 300px;
         cursor: move;
-        user-select: none;
     }
 
-    /* DẤU CHẤM TỌA ĐỘ */
-    #targetPoint {
+    /* CHẤM ĐỎ */
+    #redPoint {
         position: absolute;
-
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
 
         background: red;
         border-radius: 50%;
 
+        left: 400px;
+        top: 250px;
+
         transform: translate(-50%, -50%);
 
-        pointer-events: none;
+        z-index: 20;
+        box-shadow: 0 0 8px red;
 
-        z-index: 10;
+        pointer-events: none;
     }
 </style>
 </head>
@@ -1005,66 +996,20 @@
 
 <div class="toolbar">
 
-    <!-- TẢI VIDEO -->
+    <!-- DUY NHẤT NÚT NGƯỜI DÙNG CẦN BẤM -->
     <input
         type="file"
         id="fileInput"
         accept="video/*"
     >
 
-    <!-- TỌA ĐỘ -->
-    <label>
-        X:
-        <input
-            type="number"
-            id="posX"
-            value="400"
-        >
-    </label>
-
-    <label>
-        Y:
-        <input
-            type="number"
-            id="posY"
-            value="250"
-        >
-    </label>
-
-    <!-- KÍCH CỠ -->
-    <label>
-        Kích cỡ:
-        <input
-            type="range"
-            id="size"
-            min="50"
-            max="1000"
-            value="300"
-        >
-
-        <span id="sizeValue">
-            300px
-        </span>
-    </label>
-
-    <!-- ĐƯA VIDEO TỚI DẤU CHẤM -->
-    <button id="moveBtn">
-        Đưa tới dấu chấm
-    </button>
-
-    <!-- TẢI FILE -->
-    <button id="downloadBtn">
-        Tải file
-    </button>
-
 </div>
 
 
-<!-- KHUNG VIDEO -->
 <div class="stage" id="stage">
 
-    <!-- DẤU CHẤM -->
-    <div id="targetPoint"></div>
+    <!-- CHẤM ĐỎ -->
+    <div id="redPoint"></div>
 
     <!-- VIDEO -->
     <video
@@ -1078,109 +1023,22 @@
 
 <script>
 
-// ==========================================
-// LẤY ELEMENT
-// ==========================================
-
 const fileInput =
     document.getElementById("fileInput");
 
 const video =
     document.getElementById("video");
 
+const redPoint =
+    document.getElementById("redPoint");
+
 const stage =
     document.getElementById("stage");
 
-const targetPoint =
-    document.getElementById("targetPoint");
 
-const posX =
-    document.getElementById("posX");
-
-const posY =
-    document.getElementById("posY");
-
-const size =
-    document.getElementById("size");
-
-const sizeValue =
-    document.getElementById("sizeValue");
-
-const moveBtn =
-    document.getElementById("moveBtn");
-
-const downloadBtn =
-    document.getElementById("downloadBtn");
-
-
-// ==========================================
-// TỌA ĐỘ DẤU CHẤM
-// ==========================================
-
-function updateTargetPoint() {
-
-    const x = Number(posX.value);
-    const y = Number(posY.value);
-
-    targetPoint.style.left = x + "px";
-    targetPoint.style.top = y + "px";
-}
-
-
-// ==========================================
-// ĐƯA VIDEO TỚI DẤU CHẤM
-// ==========================================
-
-function moveVideoToPoint() {
-
-    const x = Number(posX.value);
-    const y = Number(posY.value);
-
-    // Video tới đúng tọa độ dấu chấm
-    video.style.left = x + "px";
-    video.style.top = y + "px";
-
-    // Cập nhật vị trí dấu chấm
-    updateTargetPoint();
-}
-
-
-// ==========================================
-// NHẬP X
-// ==========================================
-
-posX.addEventListener("input", function () {
-
-    updateTargetPoint();
-
-});
-
-
-// ==========================================
-// NHẬP Y
-// ==========================================
-
-posY.addEventListener("input", function () {
-
-    updateTargetPoint();
-
-});
-
-
-// ==========================================
-// NÚT ĐƯA VIDEO TỚI DẤU CHẤM
-// ==========================================
-
-moveBtn.addEventListener("click", function () {
-
-    moveVideoToPoint();
-
-});
-
-
-// ==========================================
+// ==================================================
 // TẢI VIDEO
-// ==========================================
+// ==================================================
 
 fileInput.addEventListener("change", function () {
 
@@ -1195,149 +1053,149 @@ fileInput.addEventListener("change", function () {
 
     video.load();
 
-    // Khi video tải xong
-    video.onloadedmetadata = function () {
+});
 
-        // Tự động đưa video tới dấu chấm
-        moveVideoToPoint();
 
+// ==================================================
+// LẤY TỌA ĐỘ CHẤM ĐỎ
+// ==================================================
+
+function getRedPointPosition() {
+
+    const pointRect =
+        redPoint.getBoundingClientRect();
+
+    const stageRect =
+        stage.getBoundingClientRect();
+
+    const x =
+        pointRect.left -
+        stageRect.left +
+        pointRect.width / 2;
+
+    const y =
+        pointRect.top -
+        stageRect.top +
+        pointRect.height / 2;
+
+    return {
+        x: x,
+        y: y
     };
+}
+
+
+// ==================================================
+// ĐƯA VIDEO ĐI THEO CHẤM ĐỎ
+// ==================================================
+
+function followRedPoint() {
+
+    const point =
+        getRedPointPosition();
+
+    /*
+        Lấy kích thước video
+        để tâm video nằm đúng chấm đỏ
+    */
+
+    const videoWidth =
+        video.offsetWidth;
+
+    const videoHeight =
+        video.offsetHeight;
+
+
+    const x =
+        point.x -
+        videoWidth / 2;
+
+    const y =
+        point.y -
+        videoHeight / 2;
+
+
+    video.style.left =
+        x + "px";
+
+    video.style.top =
+        y + "px";
+
+}
+
+
+// ==================================================
+// KHI VIDEO ĐƯỢC TẢI XONG
+// ==================================================
+
+video.addEventListener("loadedmetadata", function () {
+
+    followRedPoint();
 
 });
 
 
-// ==========================================
-// CHỈNH KÍCH CỠ VIDEO
-// ==========================================
+// ==================================================
+// KÉO CHẤM ĐỎ
+// ==================================================
 
-size.addEventListener("input", function () {
-
-    const value =
-        Number(this.value);
-
-    video.style.width =
-        value + "px";
-
-    sizeValue.textContent =
-        value + "px";
-
-});
+let draggingPoint = false;
 
 
-// ==========================================
-// KÉO VIDEO BẰNG CHUỘT
-// ==========================================
+redPoint.style.pointerEvents = "auto";
 
-let dragging = false;
+redPoint.addEventListener("mousedown", function () {
 
-let offsetX = 0;
-let offsetY = 0;
-
-
-video.addEventListener("mousedown", function (e) {
-
-    dragging = true;
-
-    const rect =
-        video.getBoundingClientRect();
-
-    offsetX =
-        e.clientX - rect.left;
-
-    offsetY =
-        e.clientY - rect.top;
+    draggingPoint = true;
 
 });
 
 
 document.addEventListener("mousemove", function (e) {
 
-    if (!dragging) return;
+    if (!draggingPoint) return;
 
-    const stageRect =
+
+    const rect =
         stage.getBoundingClientRect();
 
-    const x =
+
+    let x =
         e.clientX -
-        stageRect.left -
-        offsetX;
+        rect.left;
 
-    const y =
+    let y =
         e.clientY -
-        stageRect.top -
-        offsetY;
+        rect.top;
 
-    posX.value =
-        Math.round(x);
 
-    posY.value =
-        Math.round(y);
+    /*
+        Không cho chấm đỏ
+        ra ngoài khung
+    */
 
-    video.style.left =
-        Math.round(x) + "px";
+    x = Math.max(0, Math.min(800, x));
+    y = Math.max(0, Math.min(500, y));
 
-    video.style.top =
-        Math.round(y) + "px";
 
-    updateTargetPoint();
+    redPoint.style.left =
+        x + "px";
+
+    redPoint.style.top =
+        y + "px";
+
+
+    // VIDEO ĐI THEO CHẤM
+    followRedPoint();
 
 });
 
 
 document.addEventListener("mouseup", function () {
 
-    dragging = false;
+    draggingPoint = false;
 
 });
-
-
-// ==========================================
-// NÚT TẢI FILE
-// ==========================================
-
-downloadBtn.addEventListener("click", function () {
-
-    const file =
-        fileInput.files[0];
-
-    if (!file) {
-
-        alert("Hãy tải video lên trước!");
-
-        return;
-
-    }
-
-    const url =
-        URL.createObjectURL(file);
-
-    const a =
-        document.createElement("a");
-
-    a.href = url;
-
-    a.download = file.name;
-
-    document.body.appendChild(a);
-
-    a.click();
-
-    a.remove();
-
-    setTimeout(function () {
-
-        URL.revokeObjectURL(url);
-
-    }, 1000);
-
-});
-
-
-// ==========================================
-// KHỞI TẠO DẤU CHẤM
-// ==========================================
-
-updateTargetPoint();
 
 </script>
 
