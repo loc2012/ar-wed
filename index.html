@@ -305,26 +305,11 @@
 
  
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // =========================================================================
-    // KHỐI 3: VẼ NHÂN VẬT & QUÉT TỌA ĐỘ MÀU XANH LÁ (FULL ĐẦY ĐỦ)
+    // KHỐI 3: VẼ NHÂN VẬT & QUÉT TỌA ĐỘ MÀU XANH LÁ (SIÊU NHẠY)
     // =========================================================================
 
-    // 1. HÀM CHUYÊN VẼ NHÂN VẬT TẠI TỌA ĐỘ (X, Y)
+    // 1. HÀM VẼ NHÂN VẬT TẠI TỌA ĐỘ (X, Y)
     function drawCharacter(x, y) {
         let size = 90; // Kích thước khối vuông nhân vật
 
@@ -368,20 +353,14 @@
             let count = 0;
             let step = 6; // Bước nhảy để tối ưu hiệu năng, tránh giật lag
 
-            // --- THUẬT TOÁN QUÉT MÀU XANH SIÊU NHẠY ---
+            // --- QUÉT MÀU XANH SIÊU THÔNG THOÁNG ---
             for (let i = 0; i < data.length; i += 4 * step) {
                 let r = data[i];
                 let g = data[i + 1];
                 let b = data[i + 2];
 
-                // Tính phần trăm kênh màu Xanh Lá (G)
-                let total = r + g + b;
-                if (total === 0) total = 1; // Chống lỗi chia cho 0
-
-                let percentG = (g / total) * 100;
-
-                // ĐIỀU KIỆN: Chỉ cần kênh G > 15, chiếm trên 35% tổng màu và sáng hơn R, B
-                if (g > 15 && percentG > 35 && g > r && g > b) {
+                // Bắt mọi sắc xanh lá, kể cả khi góc tối hoặc bị bóng đè lên
+                if (g > 20 && g > r * 0.9) {
                     let pixelIndex = i / 4;
                     let x = pixelIndex % canvas.width;
                     let y = Math.floor(pixelIndex / canvas.width);
