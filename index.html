@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 1 & 3: VR Split & Nhận Diện Màu Xanh</title>
+    <title>Khối 3 - VR Split & Green Detection Smooth</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -12,39 +12,14 @@
         html, body {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
             background-color: #000;
             font-family: sans-serif;
         }
 
-        /* KHỐI 1 STATUS */
-        #block1-status {
-            position: fixed;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            background: rgba(0, 0, 0, 0.85);
-            color: #00ffcc;
-            padding: 10px 18px;
-            border-radius: 20px;
-            border: 1px solid #00ffcc;
-            font-size: 13px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
-        }
-
-        #camera-feed {
-            width: 100vw;
-            height: 50vh;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* KHỐI 3 UI */
+        /* Nút UI Điều khiển */
         #block3-ui {
             position: fixed;
             bottom: 80px;
@@ -66,98 +41,105 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* KHUNG CHỨA TOÀN BỘ SCENE */
         #vr-wrapper {
             width: 100vw;
-            height: 50vh;
+            height: 100vh;
             position: relative;
+            overflow: hidden;
         }
 
+        /* XỬ LÝ CHIA ĐÔI MÀN HÌNH BẰNG CSS DUP DUAL-EYE (KHÔNG DÙNG IFRAME) */
         body.mode-vr-split #vr-wrapper {
             display: flex;
+            width: 100vw;
+            height: 100vh;
         }
 
-        body.mode-vr-split .a-canvas,
-        body.mode-vr-split video {
-            width: 100vw !important;
-            height: 50vh !important;
+        /* Cấu hình hiển thị chuẩn VR Split */
+        body.mode-vr-split .a-canvas {
+            width: 50vw !important;
+            height: 100vh !important;
+            position: absolute !important;
             left: 0 !important;
-            object-fit: cover !important;
+            top: 0 !important;
         }
 
-        #right-eye-overlay {
+        /* Tạo hiệu ứng nhân bản mắt bên phải trực tiếp trên GPU */
+        #right-eye-clone {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 0;
             right: 0;
             width: 50vw;
             height: 100vh;
-            z-index: 99998;
+            z-index: 999;
             border-left: 2px solid #00ffcc;
             background: #000;
             overflow: hidden;
         }
 
-        body.mode-vr-split #right-eye-overlay {
+        body.mode-vr-split #right-eye-clone {
             display: block;
         }
 
-        #right-eye-overlay iframe {
-            width: 200%;
-            height: 100%;
-            border: none;
-            margin-left: -100%;
-            pointer-events: none;
+        #right-eye-clone canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: absolute;
+            right: 0;
+            top: 0;
         }
 
-        /* NHẬN DIỆN MÀU XANH UI */
+        /* CANVAS ẨN QUÉT MÀU XANH 320x240 */
         #green-detection-canvas {
             display: none;
         }
 
+        /* CHẤM ĐỎ THEO DÕI */
         #red-dot {
             position: fixed;
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: red;
-            border: 4px solid white;
-            box-shadow: 0 0 15px red, 0 0 30px red;
+            border: 3px solid white;
+            box-shadow: 0 0 15px red, 0 0 25px red;
             transform: translate(-50%, -50%);
             z-index: 999999;
             display: none;
             pointer-events: none;
         }
 
+        /* BẢNG TRẠNG THÁI */
         #green-status {
             position: fixed;
             left: 50%;
-            bottom: 25px;
+            bottom: 20px;
             transform: translateX(-50%);
             z-index: 999999;
-            min-width: 260px;
-            padding: 12px 18px;
-            border-radius: 15px;
-            background: rgba(0,0,0,.85);
+            min-width: 250px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.85);
             color: white;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             border: 2px solid #555;
             box-shadow: 0 0 15px rgba(0,0,0,.5);
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- KHỐI 1 -->
-    <div id="block1-status">📌 [KHỐI 1] Đang khởi động Camera Sau...</div>
-    <video id="camera-feed" autoplay playsinline muted></video>
-
-    <!-- KHỐI 3 VR -->
+    <!-- NÚT BẬT/TẮT VR -->
     <div id="block3-ui">
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
+    <!-- KHUNG CHỨA SCENE VR/AR -->
     <div id="vr-wrapper">
         <a-scene 
             id="ar-scene"
@@ -176,51 +158,23 @@
                 </a-box>
             </a-entity>
         </a-scene>
+
+        <!-- KHUNG CHỨA MẮT PHẢI VR (DÙNG CANAL REPLICATOR) -->
+        <div id="right-eye-clone"></div>
     </div>
 
-    <div id="right-eye-overlay"></div>
-
-    <!-- ELEMENTS NHẬN DIỆN MÀU -->
+    <!-- THÀNH PHẦN QUÉT MÀU XANH -->
     <canvas id="green-detection-canvas" width="320" height="240"></canvas>
     <div id="red-dot"></div>
-    <div id="green-status">🔍 Đang tìm màu xanh...</div>
+    <div id="green-status">⏳ Đang chờ camera MindAR...</div>
 
-    <!-- SCRIPT KHỐI 1 -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const videoEl = document.getElementById('camera-feed');
-            const statusEl = document.getElementById('block1-status');
-
-            const constraints = {
-                video: {
-                    facingMode: { ideal: "environment" },
-                    width: { ideal: 320 },
-                    height: { ideal: 240 }
-                },
-                audio: false
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(function(stream) {
-                    videoEl.srcObject = stream;
-                    statusEl.innerText = "🟢 [KHỐI 1] CAMERA SAU HOẠT ĐỘNG TỐT!";
-                    statusEl.style.borderColor = "#00ffcc";
-                    statusEl.style.color = "#00ffcc";
-                })
-                .catch(function(err) {
-                    console.error("Lỗi Camera Khối 1:", err);
-                    statusEl.innerText = "🔴 [KHỐI 1] LỖI BẬT CAM: " + err.message;
-                    statusEl.style.borderColor = "#ff3366";
-                    statusEl.style.color = "#ff3366";
-                });
-        });
-    </script>
-
-    <!-- SCRIPT KHỐI 3: IFRAME VR SPLIT -->
-    <script>
+        /* =========================================================
+           1. SỰ KIỆN NÚT BẬT CHIA ĐÔI VR
+        ========================================================= */
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
-            const eye2 = document.getElementById("right-eye-overlay");
+            const rightEye = document.getElementById("right-eye-clone");
             let isVR = false;
 
             btnVR.addEventListener("click", function () {
@@ -233,23 +187,32 @@
                     btnVR.style.borderColor = "#ff3366";
                     btnVR.style.color = "#fff";
 
-                    eye2.innerHTML = `<iframe src="${window.location.href}"></iframe>`;
+                    // Clone canvas thực tế của A-Frame sang mắt phải
+                    const originalCanvas = document.querySelector('.a-canvas');
+                    if (originalCanvas && rightEye.children.length === 0) {
+                        const clonedCanvas = originalCanvas.cloneNode(true);
+                        rightEye.appendChild(clonedCanvas);
+                    }
                 } else {
                     document.body.classList.remove("mode-vr-split");
                     btnVR.innerText = "🥽 Bật Chia Đôi VR";
                     btnVR.style.background = "#00ffcc";
                     btnVR.style.borderColor = "#00ffcc";
                     btnVR.style.color = "#000";
-                    eye2.innerHTML = "";
+                    rightEye.innerHTML = "";
                 }
 
                 window.dispatchEvent(new Event('resize'));
             });
         });
-    </script>
 
-    <!-- SCRIPT KHỐI 3: NHẬN DIỆN MÀU XANH TỐI ƯU (320x240 Smooth) -->
-    <script>
+        /* =========================================================
+           2. THUẬT TOÁN QUÉT MÀU XANH 320x240 TỐI ƯU FPS
+        ========================================================= */
+        const W = 320;
+        const H = 240;
+        const MIN_GREEN_PIXELS = 300;
+
         const canvas = document.getElementById("green-detection-canvas");
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         const redDot = document.getElementById("red-dot");
@@ -275,25 +238,23 @@
             const sum = r + g + b;
             if (sum < 12) return false;
 
-            const greenRatio = g / (sum + 1);
-            const redRatio = r / (sum + 1);
-            const blueRatio = b / (sum + 1);
+            const sumAdj = sum + 1;
+            const greenRatio = g / sumAdj;
+            const redRatio = r / sumAdj;
+            const blueRatio = b / sumAdj;
 
-            const greenDominant = greenRatio > redRatio * 1.12 && greenRatio > blueRatio * 1.12;
-            if (!greenDominant) return false;
+            if (greenRatio <= redRatio * 1.12 || greenRatio <= blueRatio * 1.12) {
+                return false;
+            }
 
-            const greenIndex = (2 * g - r - b) / (sum + 1);
-            const strongGreen = greenIndex > 0.55;
-            if (!strongGreen) return false;
+            const greenIndex = (2 * g - r - b) / sumAdj;
+            if (greenIndex <= 0.55) return false;
 
             const maxRGB = Math.max(r, g, b);
             const minRGB = Math.min(r, g, b);
-            const chroma = maxRGB - minRGB;
-            const enoughColorDifference = chroma >= 4;
-            if (!enoughColorDifference) return false;
+            if ((maxRGB - minRGB) < 4) return false;
 
-            const notYellow = g > r * 1.05;
-            if (!notYellow) return false;
+            if (g <= r * 1.05) return false;
 
             return true;
         }
@@ -301,22 +262,14 @@
         function detectGreen() {
             const video = findCameraVideo();
 
-            if (!video) {
+            if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
                 greenStatus.innerHTML = "⏳ Đang chờ camera MindAR...";
                 requestAnimationFrame(detectGreen);
                 return;
             }
 
-            if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-                requestAnimationFrame(detectGreen);
-                return;
-            }
-
-            const w = 320;
-            const h = 240;
-
             try {
-                ctx.drawImage(video, 0, 0, w, h);
+                ctx.drawImage(video, 0, 0, W, H);
             } catch (error) {
                 requestAnimationFrame(detectGreen);
                 return;
@@ -324,7 +277,7 @@
 
             let imageData;
             try {
-                imageData = ctx.getImageData(0, 0, w, h);
+                imageData = ctx.getImageData(0, 0, W, H);
             } catch (error) {
                 requestAnimationFrame(detectGreen);
                 return;
@@ -335,9 +288,10 @@
             let totalY = 0;
             let count = 0;
 
-            for (let y = 0; y < h; y += 2) {
-                for (let x = 0; x < w; x += 2) {
-                    const i = (y * w + x) * 4;
+            for (let y = 0; y < H; y += 2) {
+                const rowOffset = y * W;
+                for (let x = 0; x < W; x += 2) {
+                    const i = (rowOffset + x) << 2;
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
@@ -350,20 +304,18 @@
                 }
             }
 
-            const MIN_GREEN_PIXELS = 300;
-
             if (count >= MIN_GREEN_PIXELS) {
                 const centerX = totalX / count;
                 const centerY = totalY / count;
 
-                const screenX = (centerX / w) * window.innerWidth;
-                const screenY = (centerY / h) * window.innerHeight;
+                const screenX = (centerX / W) * window.innerWidth;
+                const screenY = (centerY / H) * window.innerHeight;
 
                 redDot.style.display = "block";
                 redDot.style.left = screenX + "px";
                 redDot.style.top = screenY + "px";
 
-                greenStatus.innerHTML = "🟢 XANH ĐƯỢC PHÁT HIỆN<br>📍 X: " + Math.round(screenX) + " | Y: " + Math.round(screenY) + "<br>🔴 Chấm đỏ đang ở tâm vùng xanh";
+                greenStatus.innerHTML = `🟢 XANH ĐƯỢC PHÁT HIỆN<br>📍 X: ${Math.round(screenX)} | Y: ${Math.round(screenY)}<br>🔴 Chấm đỏ đang ở tâm vùng xanh`;
                 greenStatus.style.color = "#00ff66";
                 greenStatus.style.borderColor = "#00ff66";
             } else {
@@ -376,11 +328,10 @@
             requestAnimationFrame(detectGreen);
         }
 
-        window.addEventListener("load", function() {
+        window.addEventListener("load", function () {
             setTimeout(detectGreen, 500);
         });
     </script>
-
 </body>
 </html>
 
