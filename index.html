@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Khối 3 - VR Split & Green Detection Optimized</title>
     
-    <!-- Các thư viện AR / VR -->
+    <!-- Thư viện A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
@@ -42,17 +42,16 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        #vr-wrapper {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
+        /* Chế độ VR Split */
+        body.mode-vr-split .a-canvas,
+        body.mode-vr-split video {
+            width: 50vw !important;
+            height: 100vh !important;
+            left: 0 !important;
+            object-fit: cover !important;
         }
 
-        body.mode-vr-split #vr-wrapper {
-            display: flex;
-        }
-
-        /* Lớp nhân bản mắt phải */
+        /* Mắt phải dùng iframe nhân bản */
         #right-eye-overlay {
             display: none;
             position: fixed;
@@ -78,12 +77,12 @@
             pointer-events: none;
         }
 
-        /* Canvas xử lý pixel ẩn */
+        /* Canvas ẩn phục vụ xử lý màu */
         #green-detection-canvas {
             display: none;
         }
 
-        /* Chấm đỏ theo dõi tâm vùng xanh */
+        /* Chấm đỏ theo dõi */
         #red-dot {
             position: fixed;
             width: 40px;
@@ -99,7 +98,7 @@
             will-change: left, top;
         }
 
-        /* Bảng hiển thị thông số */
+        /* Bảng trạng thái */
         #green-status {
             position: fixed;
             left: 50%;
@@ -122,43 +121,41 @@
 </head>
 <body>
 
-    <!-- CONTROL CHIA ĐÔI MÀN HÌNH -->
+    <!-- CONTROL VR -->
     <div id="block3-ui">
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
-    <!-- KHUNG CHỨA SCENE AR (MINDAR & AFRAME) -->
-    <div id="vr-wrapper">
-        <a-scene 
-            id="ar-scene"
-            mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
-            embedded
-            color-space="sRGB" 
-            renderer="colorManagement: true, physicallyCorrectLights"
-            vr-mode-ui="enabled: false"
-            device-orientation-permission-ui="enabled: false">
-            
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <!-- SCENE AR CỦA MINDAR (ĐẶT TRỰC TIẾP TRONG BODY) -->
+    <a-scene 
+        id="ar-scene"
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+        embedded
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-            <a-entity mindar-image-target="targetIndex: 0">
-                <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
-                       animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
-                </a-box>
-            </a-entity>
-        </a-scene>
-    </div>
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-box position="0 0 0.25" material="color: #00ffcc; wireframe: true" scale="0.3 0.3 0.3"
+                   animation="property: rotation; to: 0 360 360; loop: true; dur: 4000; easing: linear">
+            </a-box>
+        </a-entity>
+    </a-scene>
 
-    <!-- LỚP HIỂN THỊ MẮT PHẢI (CHIA ĐÔI VR) -->
+    <!-- MẮT PHẢI VR -->
     <div id="right-eye-overlay"></div>
 
     <!-- CÁC THÀNH PHẦN NHẬN DIỆN MÀU XANH -->
     <canvas id="green-detection-canvas" width="320" height="240"></canvas>
     <div id="red-dot"></div>
-    <div id="green-status">🔍 Đang tìm camera MindAR...</div>
+    <div id="green-status">🔍 Đang chờ camera MindAR...</div>
 
     <script>
         /* =========================================================
-           1. XỬ LÝ SỰ KIỆN CHIA ĐÔI MÀN HÌNH VR
+           1. LOGIC CHIA ĐÔI MÀN HÌNH VR
         ========================================================= */
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
@@ -187,21 +184,20 @@
         });
 
         /* =========================================================
-           2. THUẬT TOÁN TỐI ƯU NHẬN DIỆN MÀU XANH (FPS CAO)
+           2. THUẬT TOÁN TỐI ƯU NHẬN DIỆN MÀU XANH (Y HỆT 100% CƠ CẤU GỐC)
         ========================================================= */
         const W = 320;
         const H = 240;
         const MIN_GREEN_PIXELS = 300;
 
         const canvas = document.getElementById("green-detection-canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true, alpha: false });
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
         const redDot = document.getElementById("red-dot");
         const greenStatus = document.getElementById("green-status");
 
         let cachedVideo = null;
 
-        // Lưu tạm thẻ video của MindAR để tránh gọi DOM lặp lại
-        function getCameraVideo() {
+        function findCameraVideo() {
             if (cachedVideo && cachedVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
                 return cachedVideo;
             }
@@ -215,58 +211,70 @@
             return null;
         }
 
-        // Kiểm tra màu xanh (Giữ chính xác 100% logic thuật toán)
         function isGreen(r, g, b) {
             const sum = r + g + b;
             if (sum < 12) return false;
 
-            const sumAdj = sum + 1;
-            const greenRatio = g / sumAdj;
-            const redRatio = r / sumAdj;
-            const blueRatio = b / sumAdj;
+            const greenRatio = g / (sum + 1);
+            const redRatio = r / (sum + 1);
+            const blueRatio = b / (sum + 1);
 
-            if (greenRatio <= redRatio * 1.12 || greenRatio <= blueRatio * 1.12) {
-                return false;
-            }
+            const greenDominant = greenRatio > redRatio * 1.12 && greenRatio > blueRatio * 1.12;
+            if (!greenDominant) return false;
 
-            const greenIndex = (2 * g - r - b) / sumAdj;
-            if (greenIndex <= 0.55) return false;
+            const greenIndex = (2 * g - r - b) / (sum + 1);
+            const strongGreen = greenIndex > 0.55;
+            if (!strongGreen) return false;
 
             const maxRGB = Math.max(r, g, b);
             const minRGB = Math.min(r, g, b);
-            if ((maxRGB - minRGB) < 4) return false;
+            const chroma = maxRGB - minRGB;
+            const enoughColorDifference = chroma >= 4;
+            if (!enoughColorDifference) return false;
 
-            if (g <= r * 1.05) return false;
+            const notYellow = g > r * 1.05;
+            if (!notYellow) return false;
 
             return true;
         }
 
-        // Vòng lặp nhận diện chạy bằng requestAnimationFrame
-        function detectGreenLoop() {
-            const video = getCameraVideo();
+        function detectGreen() {
+            const video = findCameraVideo();
 
             if (!video) {
                 greenStatus.innerHTML = "⏳ Đang chờ camera MindAR...";
-                requestAnimationFrame(detectGreenLoop);
+                requestAnimationFrame(detectGreen);
                 return;
             }
 
-            // Vẽ frame ảnh sang canvas ẩn
-            ctx.drawImage(video, 0, 0, W, H);
-            
-            const imageData = ctx.getImageData(0, 0, W, H);
-            const data = imageData.data;
+            if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                requestAnimationFrame(detectGreen);
+                return;
+            }
 
+            try {
+                ctx.drawImage(video, 0, 0, W, H);
+            } catch (error) {
+                requestAnimationFrame(detectGreen);
+                return;
+            }
+
+            let imageData;
+            try {
+                imageData = ctx.getImageData(0, 0, W, H);
+            } catch (error) {
+                requestAnimationFrame(detectGreen);
+                return;
+            }
+
+            const data = imageData.data;
             let totalX = 0;
             let totalY = 0;
             let count = 0;
 
-            // Quét pixel với bước nhảy 2 (Tăng tốc xử lý CPU)
             for (let y = 0; y < H; y += 2) {
-                const rowOffset = y * W;
                 for (let x = 0; x < W; x += 2) {
-                    const i = (rowOffset + x) << 2; // Tương đương phép nhân 4
-
+                    const i = (y * W + x) * 4;
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
@@ -279,7 +287,6 @@
                 }
             }
 
-            // Cập nhật vị trí chấm đỏ và thông báo
             if (count >= MIN_GREEN_PIXELS) {
                 const centerX = totalX / count;
                 const centerY = totalY / count;
@@ -291,7 +298,7 @@
                 redDot.style.left = screenX + "px";
                 redDot.style.top = screenY + "px";
 
-                greenStatus.innerHTML = `🟢 XANH ĐƯỢC PHÁT HIỆN<br>📍 X: ${Math.round(screenX)} | Y: ${Math.round(screenY)}<br>🔴 Chấm đỏ đang ở tâm vùng xanh`;
+                greenStatus.innerHTML = "🟢 XANH ĐƯỢC PHÁT HIỆN<br>📍 X: " + Math.round(screenX) + " | Y: " + Math.round(screenY) + "<br>🔴 Chấm đỏ đang ở tâm vùng xanh";
                 greenStatus.style.color = "#00ff66";
                 greenStatus.style.borderColor = "#00ff66";
             } else {
@@ -301,13 +308,13 @@
                 greenStatus.style.borderColor = "#ff3366";
             }
 
-            requestAnimationFrame(detectGreenLoop);
+            requestAnimationFrame(detectGreen);
         }
 
-        // Khai hỏa khi trang web đã tải xong
         window.addEventListener("load", function () {
-            setTimeout(detectGreenLoop, 500);
+            setTimeout(detectGreen, 500);
         });
     </script>
 </body>
 </html>
+
