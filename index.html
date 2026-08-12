@@ -1,9 +1,97 @@
-<!DOCTYPE html>
+9p(<!DOCTYPE html>9
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Khối 3 - VR Split & Green Detection Smooth</title>
+    <title>Khối 1: Bật Camera Chuẩn</title>
+    
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        /* Đèn báo trạng thái Khối 1 */
+        #block1-status {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            color: #00ffcc;
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid #00ffcc;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+        }
+
+        /* Thẻ hiển thị hình ảnh Camera toàn màn hình */
+        #camera-feed {
+            width: 100vw;
+            height: 50vh;
+            object-fit: cover;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- THÔNG BÁO TÊN KHỐI & TRẠNG THÁI -->
+    <div id="block1-status">📌 [KHỐI 1] Đang khởi động Camera Sau...</div>
+
+    <!-- KHUNG HIỂN THỊ CAMERA -->
+    <video id="camera-feed" autoplay playsinline muted></video>
+
+    <!-- LOGIC BẬT CAMERA SAU (FACINGMODE: ENVIRONMENT) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const videoEl = document.getElementById('camera-feed');
+            const statusEl = document.getElementById('block1-status');
+
+            // Cấu hình ưu tiên lấy Camera Sau của điện thoại
+            const constraints = {
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 320 },
+                    height: { ideal: 240 }
+                },
+                audio: false
+            };
+
+            // Kích hoạt luồng Camera
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    videoEl.srcObject = stream;
+                    statusEl.innerText = "🟢 [KHỐI 1] CAMERA SAU HOẠT ĐỘNG TỐT!";
+                    statusEl.style.borderColor = "#00ffcc";
+                    statusEl.style.color = "#00ffcc";
+                })
+                .catch(function(err) {
+                    console.error("Lỗi Camera Khối 1:", err);
+                    statusEl.innerText = "🔴 [KHỐI 1] LỖI BẬT CAM: " + err.message;
+                    statusEl.style.borderColor = "#ff3366";
+                    statusEl.style.color = "#ff3366";
+                });
+        });
+    </script>
+
+</body>
+</html>
+
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Khối 3: Chia Đôi Màn Hình VR Thật sự</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -12,17 +100,16 @@
         html, body {
             margin: 0;
             padding: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background-color: #000;
             font-family: sans-serif;
         }
 
-        /* Nút UI Điều khiển */
         #block3-ui {
             position: fixed;
-            bottom: 80px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999999;
@@ -41,105 +128,61 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* KHUNG CHỨA TOÀN BỘ SCENE */
+        /* KHUNG BAO NGOÀI TOÀN BỘ */
         #vr-wrapper {
             width: 100vw;
-            height: 100vh;
+            height: 50vh;
             position: relative;
-            overflow: hidden;
         }
 
-        /* XỬ LÝ CHIA ĐÔI MÀN HÌNH BẰNG CSS DUP DUAL-EYE (KHÔNG DÙNG IFRAME) */
+        /* BẬT CHẾ ĐỘ CHIA ĐÔI THẬT SỰ */
         body.mode-vr-split #vr-wrapper {
             display: flex;
-            width: 100vw;
-            height: 100vh;
         }
 
-        /* Cấu hình hiển thị chuẩn VR Split */
-        body.mode-vr-split .a-canvas {
-            width: 50vw !important;
-            height: 100vh !important;
-            position: absolute !important;
+        /* Mắt trái */
+        body.mode-vr-split .a-canvas,
+        body.mode-vr-split video {
+            width: 100vw !important;
+            height: 50vh !important;
             left: 0 !important;
-            top: 0 !important;
+            object-fit: cover !important;
         }
 
-        /* Tạo hiệu ứng nhân bản mắt bên phải trực tiếp trên GPU */
-        #right-eye-clone {
+        /* Lớp phủ mắt phải dùng CSS Background Reflection */
+        #right-eye-overlay {
             display: none;
-            position: absolute;
+            position: fixed;
             top: 0;
             right: 0;
             width: 50vw;
             height: 100vh;
-            z-index: 999;
+            z-index: 99998;
             border-left: 2px solid #00ffcc;
             background: #000;
             overflow: hidden;
         }
 
-        body.mode-vr-split #right-eye-clone {
+        body.mode-vr-split #right-eye-overlay {
             display: block;
         }
 
-        #right-eye-clone canvas {
-            width: 100vw !important;
-            height: 100vh !important;
-            position: absolute;
-            right: 0;
-            top: 0;
-        }
-
-        /* CANVAS ẨN QUÉT MÀU XANH 320x240 */
-        #green-detection-canvas {
-            display: none;
-        }
-
-        /* CHẤM ĐỎ THEO DÕI */
-        #red-dot {
-            position: fixed;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: red;
-            border: 3px solid white;
-            box-shadow: 0 0 15px red, 0 0 25px red;
-            transform: translate(-50%, -50%);
-            z-index: 999999;
-            display: none;
-            pointer-events: none;
-        }
-
-        /* BẢNG TRẠNG THÁI */
-        #green-status {
-            position: fixed;
-            left: 50%;
-            bottom: 20px;
-            transform: translateX(-50%);
-            z-index: 999999;
-            min-width: 250px;
-            padding: 10px 16px;
-            border-radius: 12px;
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            text-align: center;
-            font-size: 13px;
-            font-weight: bold;
-            border: 2px solid #555;
-            box-shadow: 0 0 15px rgba(0,0,0,.5);
+        #right-eye-overlay iframe {
+            width: 200%;
+            height: 100%;
+            border: none;
+            margin-left: -100%;
             pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- NÚT BẬT/TẮT VR -->
     <div id="block3-ui">
         <button id="btn-vr">🥽 Bật Chia Đôi VR</button>
     </div>
 
-    <!-- KHUNG CHỨA SCENE VR/AR -->
+    <!-- KHUNG CHỨA SCENE -->
     <div id="vr-wrapper">
         <a-scene 
             id="ar-scene"
@@ -158,23 +201,15 @@
                 </a-box>
             </a-entity>
         </a-scene>
-
-        <!-- KHUNG CHỨA MẮT PHẢI VR (DÙNG CANAL REPLICATOR) -->
-        <div id="right-eye-clone"></div>
     </div>
 
-    <!-- THÀNH PHẦN QUÉT MÀU XANH -->
-    <canvas id="green-detection-canvas" width="320" height="240"></canvas>
-    <div id="red-dot"></div>
-    <div id="green-status">⏳ Đang chờ camera MindAR...</div>
+    <!-- MẮT PHẢI HIỂN THỊ NỬA CÒN LẠI -->
+    <div id="right-eye-overlay" id="eye2"></div>
 
     <script>
-        /* =========================================================
-           1. SỰ KIỆN NÚT BẬT CHIA ĐÔI VR
-        ========================================================= */
         document.addEventListener("DOMContentLoaded", function () {
             const btnVR = document.getElementById("btn-vr");
-            const rightEye = document.getElementById("right-eye-clone");
+            const eye2 = document.getElementById("right-eye-overlay");
             let isVR = false;
 
             btnVR.addEventListener("click", function () {
@@ -187,151 +222,666 @@
                     btnVR.style.borderColor = "#ff3366";
                     btnVR.style.color = "#fff";
 
-                    // Clone canvas thực tế của A-Frame sang mắt phải
-                    const originalCanvas = document.querySelector('.a-canvas');
-                    if (originalCanvas && rightEye.children.length === 0) {
-                        const clonedCanvas = originalCanvas.cloneNode(true);
-                        rightEye.appendChild(clonedCanvas);
-                    }
+                    // Nhúng mirror bằng iframe chính trang này để nhân bản mắt 2 100%
+                    eye2.innerHTML = `<iframe src="${window.location.href}"></iframe>`;
                 } else {
                     document.body.classList.remove("mode-vr-split");
                     btnVR.innerText = "🥽 Bật Chia Đôi VR";
                     btnVR.style.background = "#00ffcc";
                     btnVR.style.borderColor = "#00ffcc";
                     btnVR.style.color = "#000";
-                    rightEye.innerHTML = "";
+                    eye2.innerHTML = "";
                 }
 
                 window.dispatchEvent(new Event('resize'));
             });
         });
-
-        /* =========================================================
-           2. THUẬT TOÁN QUÉT MÀU XANH 320x240 TỐI ƯU FPS
-        ========================================================= */
-        const W = 320;
-        const H = 240;
-        const MIN_GREEN_PIXELS = 300;
-
-        const canvas = document.getElementById("green-detection-canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        const redDot = document.getElementById("red-dot");
-        const greenStatus = document.getElementById("green-status");
-
-        let cachedVideo = null;
-
-        function findCameraVideo() {
-            if (cachedVideo && cachedVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                return cachedVideo;
-            }
-            const videos = document.querySelectorAll("video");
-            for (let i = 0; i < videos.length; i++) {
-                if (videos[i].readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                    cachedVideo = videos[i];
-                    return cachedVideo;
-                }
-            }
-            return null;
-        }
-
-        function isGreen(r, g, b) {
-            const sum = r + g + b;
-            if (sum < 12) return false;
-
-            const sumAdj = sum + 1;
-            const greenRatio = g / sumAdj;
-            const redRatio = r / sumAdj;
-            const blueRatio = b / sumAdj;
-
-            if (greenRatio <= redRatio * 1.12 || greenRatio <= blueRatio * 1.12) {
-                return false;
-            }
-
-            const greenIndex = (2 * g - r - b) / sumAdj;
-            if (greenIndex <= 0.55) return false;
-
-            const maxRGB = Math.max(r, g, b);
-            const minRGB = Math.min(r, g, b);
-            if ((maxRGB - minRGB) < 4) return false;
-
-            if (g <= r * 1.05) return false;
-
-            return true;
-        }
-
-        function detectGreen() {
-            const video = findCameraVideo();
-
-            if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-                greenStatus.innerHTML = "⏳ Đang chờ camera MindAR...";
-                requestAnimationFrame(detectGreen);
-                return;
-            }
-
-            try {
-                ctx.drawImage(video, 0, 0, W, H);
-            } catch (error) {
-                requestAnimationFrame(detectGreen);
-                return;
-            }
-
-            let imageData;
-            try {
-                imageData = ctx.getImageData(0, 0, W, H);
-            } catch (error) {
-                requestAnimationFrame(detectGreen);
-                return;
-            }
-
-            const data = imageData.data;
-            let totalX = 0;
-            let totalY = 0;
-            let count = 0;
-
-            for (let y = 0; y < H; y += 2) {
-                const rowOffset = y * W;
-                for (let x = 0; x < W; x += 2) {
-                    const i = (rowOffset + x) << 2;
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-
-                    if (isGreen(r, g, b)) {
-                        totalX += x;
-                        totalY += y;
-                        count++;
-                    }
-                }
-            }
-
-            if (count >= MIN_GREEN_PIXELS) {
-                const centerX = totalX / count;
-                const centerY = totalY / count;
-
-                const screenX = (centerX / W) * window.innerWidth;
-                const screenY = (centerY / H) * window.innerHeight;
-
-                redDot.style.display = "block";
-                redDot.style.left = screenX + "px";
-                redDot.style.top = screenY + "px";
-
-                greenStatus.innerHTML = `🟢 XANH ĐƯỢC PHÁT HIỆN<br>📍 X: ${Math.round(screenX)} | Y: ${Math.round(screenY)}<br>🔴 Chấm đỏ đang ở tâm vùng xanh`;
-                greenStatus.style.color = "#00ff66";
-                greenStatus.style.borderColor = "#00ff66";
-            } else {
-                redDot.style.display = "none";
-                greenStatus.innerHTML = "🔴 KHÔNG CÓ MÀU XANH";
-                greenStatus.style.color = "#ff3366";
-                greenStatus.style.borderColor = "#ff3366";
-            }
-
-            requestAnimationFrame(detectGreen);
-        }
-
-        window.addEventListener("load", function () {
-            setTimeout(detectGreen, 500);
-        });
     </script>
+
 </body>
 </html>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <title>Khối 3 - Nhận diện xanh sáng tối</title>
+
+    <!-- KHỐI 3 KHÔNG TẠO CAMERA RIÊNG -->
+    <!-- Chỉ xử lý hình ảnh camera mà MindAR đang sử dụng -->
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Canvas xử lý màu */
+        #green-detection-canvas {
+            position: fixed;
+            inset: 0;
+
+            width: 100vw;
+            height: 100vh;
+
+            z-index: 99990;
+            pointer-events: none;
+        }
+
+        /* Chấm đỏ */
+        #red-dot {
+            position: fixed;
+
+            width: 45px;
+            height: 45px;
+
+            border-radius: 50%;
+
+            background: red;
+            border: 4px solid white;
+
+            box-shadow:
+                0 0 15px red,
+                0 0 30px red;
+
+            transform: translate(-50%, -50%);
+
+            z-index: 999999;
+
+            display: none;
+            pointer-events: none;
+        }
+
+        /* Trạng thái */
+        #green-status {
+            position: fixed;
+
+            left: 50%;
+            bottom: 25px;
+
+            transform: translateX(-50%);
+
+            z-index: 999999;
+
+            min-width: 260px;
+
+            padding: 12px 18px;
+
+            border-radius: 15px;
+
+            background: rgba(0,0,0,.85);
+
+            color: white;
+
+            text-align: center;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            border: 2px solid #555;
+
+            box-shadow: 0 0 15px rgba(0,0,0,.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- CANVAS XỬ LÝ MÀU -->
+    <canvas id="green-detection-canvas"></canvas>
+
+    <!-- CHẤM ĐỎ -->
+    <div id="red-dot"></div>
+
+    <!-- TRẠNG THÁI -->
+    <div id="green-status">
+        🔍 Đang tìm màu xanh...
+    </div>
+
+
+<script>
+
+    /* =========================================================
+       KHỐI 3
+       NHẬN DIỆN MÀU XANH
+       
+       QUAN TRỌNG:
+       Không gọi getUserMedia()
+       Không tạo camera mới.
+       
+       Khối này chỉ tìm video mà MindAR đã tạo.
+    ========================================================= */
+
+
+    const canvas =
+        document.getElementById("green-detection-canvas");
+
+    const ctx =
+        canvas.getContext("2d", {
+            willReadFrequently: true
+        });
+
+    const redDot =
+        document.getElementById("red-dot");
+
+    const greenStatus =
+        document.getElementById("green-status");
+
+
+    /* =========================================================
+       TÌM VIDEO CAMERA CỦA MINDAR
+    ========================================================= */
+
+    function findCameraVideo() {
+
+        const videos =
+            document.querySelectorAll("video");
+
+        for (const video of videos) {
+
+            if (
+                video.readyState >=
+                HTMLMediaElement.HAVE_CURRENT_DATA
+            ) {
+
+                return video;
+            }
+        }
+
+        return null;
+    }
+
+
+    /* =========================================================
+       NHẬN DIỆN XANH
+
+       Không dùng brightness cố định.
+
+       Điều này rất quan trọng:
+
+       XANH SÁNG
+       XANH TỐI
+       XANH BỊ BÓNG
+       XANH HƠI XỈN
+
+       đều có thể được nhận.
+    ========================================================= */
+
+    function isGreen(r, g, b) {
+
+        const sum = r + g + b;
+
+        if (sum < 12) {
+            return false;
+        }
+
+
+        /* -----------------------------------------------------
+           1. GREEN DOMINANCE
+
+           G phải nổi bật hơn R và B.
+
+           Dùng tỷ lệ thay vì brightness tuyệt đối.
+        ----------------------------------------------------- */
+
+        const greenRatio =
+            g / (sum + 1);
+
+        const redRatio =
+            r / (sum + 1);
+
+        const blueRatio =
+            b / (sum + 1);
+
+
+        /*
+           Với màu xanh thật:
+
+           greenRatio thường cao hơn
+           redRatio và blueRatio.
+        */
+
+        const greenDominant =
+            greenRatio > redRatio * 1.12 &&
+            greenRatio > blueRatio * 1.12;
+
+
+        if (!greenDominant) {
+            return false;
+        }
+
+
+        /* -----------------------------------------------------
+           2. GREEN INDEX
+
+           Công thức:
+
+           2G - R - B
+
+           Sau đó chuẩn hóa theo tổng RGB.
+
+           Ưu điểm:
+           không phụ thuộc mạnh vào độ sáng.
+
+           Ví dụ:
+
+           xanh sáng:
+           40, 180, 60
+
+           xanh tối:
+           5, 35, 10
+
+           cả hai vẫn có thể cho chỉ số xanh tốt.
+        ----------------------------------------------------- */
+
+        const greenIndex =
+            (2 * g - r - b) /
+            (sum + 1);
+
+
+        /*
+           Ngưỡng thấp để bắt được xanh tối.
+
+           Nhưng vẫn đủ cao để giảm nhận nhầm
+           màu xám.
+        */
+
+        const strongGreen =
+            greenIndex > 0.55;
+
+
+        if (!strongGreen) {
+            return false;
+        }
+
+
+        /* -----------------------------------------------------
+           3. CHROMA
+
+           Kiểm tra màu có thực sự có sắc
+           hay chỉ là màu xám/trắng.
+        ----------------------------------------------------- */
+
+        const maxRGB =
+            Math.max(r, g, b);
+
+        const minRGB =
+            Math.min(r, g, b);
+
+        const chroma =
+            maxRGB - minRGB;
+
+
+        /*
+           Không bắt chroma quá cao.
+
+           Chỉ cần có sự khác biệt giữa G
+           và R/B là được.
+           
+           Điều này giúp xanh tối vẫn qua.
+        */
+
+        const enoughColorDifference =
+            chroma >= 4;
+
+
+        if (!enoughColorDifference) {
+            return false;
+        }
+
+
+        /* -----------------------------------------------------
+           4. LOẠI MỘT SỐ MÀU VÀNG
+
+           Nếu R gần bằng G quá nhiều,
+           có thể là vàng.
+
+           Với xanh thật:
+           G thường vượt R rõ hơn.
+        ----------------------------------------------------- */
+
+        const notYellow =
+            g > r * 1.05;
+
+
+        if (!notYellow) {
+            return false;
+        }
+
+
+        return true;
+    }
+
+
+    /* =========================================================
+       PHÁT HIỆN XANH
+    ========================================================= */
+
+    function detectGreen() {
+
+        const video =
+            findCameraVideo();
+
+
+        /*
+           MindAR chưa tạo video
+           thì thử lại.
+        */
+
+        if (!video) {
+
+            greenStatus.innerHTML =
+                "⏳ Đang chờ camera MindAR...";
+
+            requestAnimationFrame(
+                detectGreen
+            );
+
+            return;
+        }
+
+
+        if (
+            video.readyState <
+            HTMLMediaElement.HAVE_CURRENT_DATA
+        ) {
+
+            requestAnimationFrame(
+                detectGreen
+            );
+
+            return;
+        }
+
+
+        /* -----------------------------------------------------
+           KÍCH THƯỚC XỬ LÝ
+
+           320x240 đủ để xác định vùng xanh
+           nhưng nhẹ CPU hơn rất nhiều.
+        ----------------------------------------------------- */
+
+        const w = 320;
+        const h = 240;
+
+
+        canvas.width = w;
+        canvas.height = h;
+
+
+        try {
+
+            ctx.drawImage(
+                video,
+                0,
+                0,
+                w,
+                h
+            );
+
+        } catch (error) {
+
+            requestAnimationFrame(
+                detectGreen
+            );
+
+            return;
+        }
+
+
+        let imageData;
+
+        try {
+
+            imageData =
+                ctx.getImageData(
+                    0,
+                    0,
+                    w,
+                    h
+                );
+
+        } catch (error) {
+
+            requestAnimationFrame(
+                detectGreen
+            );
+
+            return;
+        }
+
+
+        const data =
+            imageData.data;
+
+
+        let totalX = 0;
+        let totalY = 0;
+
+        let count = 0;
+
+
+        /* =====================================================
+           QUÉT PIXEL
+
+           2 pixel lấy 1.
+
+           Nhạy hơn phiên bản cũ.
+        ===================================================== */
+
+        for (
+            let y = 0;
+            y < h;
+            y += 2
+        ) {
+
+            for (
+                let x = 0;
+                x < w;
+                x += 2
+            ) {
+
+                const i =
+                    (y * w + x) * 4;
+
+
+                const r =
+                    data[i];
+
+                const g =
+                    data[i + 1];
+
+                const b =
+                    data[i + 2];
+
+
+                if (
+                    isGreen(r, g, b)
+                ) {
+
+                    totalX += x;
+                    totalY += y;
+
+                    count++;
+                }
+            }
+        }
+
+
+        /* =====================================================
+           SỐ PIXEL XANH TỐI THIỂU
+
+           Giảm xuống so với bản cũ.
+
+           Vì xanh tối thường có ít pixel
+           vượt ngưỡng hơn.
+        ===================================================== */
+
+        const MIN_GREEN_PIXELS = 300;
+
+
+        if (
+            count >= MIN_GREEN_PIXELS
+        ) {
+
+            /* -------------------------------------------------
+               TÂM VÙNG XANH
+            ------------------------------------------------- */
+
+            const centerX =
+                totalX / count;
+
+            const centerY =
+                totalY / count;
+
+
+            /* -------------------------------------------------
+               ĐỔI SANG TỌA ĐỘ MÀN HÌNH
+            ------------------------------------------------- */
+
+            const screenX =
+                centerX / w *
+                window.innerWidth;
+
+            const screenY =
+                centerY / h *
+                window.innerHeight;
+
+
+            /* -------------------------------------------------
+               CHẤM ĐỎ
+            ------------------------------------------------- */
+
+            redDot.style.display =
+                "block";
+
+            redDot.style.left =
+                screenX + "px";
+
+            redDot.style.top =
+                screenY + "px";
+
+
+            /* -------------------------------------------------
+               TRẠNG THÁI
+            ------------------------------------------------- */
+
+            greenStatus.innerHTML =
+                "🟢 XANH ĐƯỢC PHÁT HIỆN" +
+                "<br>" +
+                "📍 X: " +
+                Math.round(screenX) +
+                " | Y: " +
+                Math.round(screenY) +
+                "<br>" +
+                "🔴 Chấm đỏ đang ở tâm vùng xanh";
+
+
+            greenStatus.style.color =
+                "#00ff66";
+
+            greenStatus.style.borderColor =
+                "#00ff66";
+
+
+        } else {
+
+            /* -------------------------------------------------
+               KHÔNG CÓ XANH
+            ------------------------------------------------- */
+
+            redDot.style.display =
+                "none";
+
+
+            greenStatus.innerHTML =
+                "🔴 KHÔNG CÓ MÀU XANH";
+
+
+            greenStatus.style.color =
+                "#ff3366";
+
+            greenStatus.style.borderColor =
+                "#ff3366";
+        }
+
+
+        requestAnimationFrame(
+            detectGreen
+        );
+    }
+
+
+    /* =========================================================
+       CHỜ CAMERA MINDAR
+    ========================================================= */
+
+    window.addEventListener(
+        "load",
+        function() {
+
+            /*
+               Cho MindAR một chút thời gian
+               tạo video camera.
+            */
+
+            setTimeout(
+                function() {
+
+                    detectGreen();
+
+                },
+                500
+            );
+        }
+    );
+
+
+</script>
+
+</body>
+</html>
+``` 
