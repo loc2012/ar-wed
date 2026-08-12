@@ -294,7 +294,7 @@
                 let b = data[i + 2];
 
                 // Điều kiện lọc màu xanh lá nổi bật
-                if (g > 80 && g > r * 1.35 && g > b * 1.2) {
+                if (g > 100 && g > r * 1.6 && g > b * 1.5) {
                     let pixelIndex = i / 4;
                     let x = pixelIndex % canvasL.width;
                     let y = Math.floor(pixelIndex / canvasL.width);
