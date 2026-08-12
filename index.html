@@ -1,138 +1,143 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bật Camera HTML</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 50px;
-            background-color: #f4f4f9;
-        }
-        video {
-            width: 100%;
-            max-width: 500px;
-            height: auto;
-            border: 2px solid #333;
-            border-radius: 8px;
-            background-color: #000;
-        }
-        button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhận Diện Màu Xanh - Web AR</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    p {
+      margin-top: 0;
+      color: #ccc;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .canvas-container {
+      position: relative;
+      margin-top: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+    video {
+      display: none; /* Ẩn thẻ video gốc, chỉ hiển thị qua Canvas */
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
 </head>
 <body>
 
-    <h2>Ứng dụng bật Camera</h2>
-    
-    <!-- Ô hiển thị video từ camera -->
-    <video id="webcam" autoplay playsinline></video>
-    
-    <!-- Nút bấm bật camera -->
-    <button onclick="startCamera()">Bật Camera</button>
+  <h1>Ứng Dụng Nhận Diện Màu Xanh</h1>
+  <p>Đưa vật thể màu xanh lá cây trước Camera để thấy hình tròn màu đỏ ở tâm.</p>
 
-    <script>
-        async function startCamera() {
-            try {
-                // Yêu cầu quyền truy cập Camera
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: false 
-                });
-                
-                // Gán luồng camera vào thẻ <video>
-                const videoElement = document.getElementById('webcam');
-                videoElement.srcObject = stream;
-            } catch (error) {
-                console.error("Lỗi khi mở camera: ", error);
-                alert("Không thể mở camera. Vui lòng kiểm tra quyền truy cập!");
-            }
+  <div class="canvas-container">
+    <video id="webcam" width="640" height="480" autoplay playsinline></video>
+    <canvas id="outputCanvas" width="640" height="480"></canvas>
+  </div>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('outputCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    // 1. Khởi tạo Camera
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' }
+        });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          processFrame();
+        };
+      } catch (err) {
+        alert('Không thể truy cập camera. Vui lòng cấp quyền truy cập camera!');
+        console.error(err);
+      }
+    }
+
+    // 2. Xử lý từng khung hình
+    function processFrame() {
+      if (video.paused || video.ended) return;
+
+      // Vẽ hình ảnh từ video lên canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Lấy dữ liệu điểm ảnh (Pixel Data)
+      const frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = frameData.data;
+
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+
+      // Nhảy qua các pixel (step = 4) để tăng tốc độ xử lý khung hình
+      const step = 4;
+
+      for (let y = 0; y < canvas.height; y += step) {
+        for (let x = 0; x < canvas.width; x += step) {
+          const index = (y * canvas.width + x) * 4;
+          const r = data[index];
+          const g = data[index + 1];
+          const b = data[index + 2];
+
+          // Điều kiện nhận diện màu xanh lá tươi (Green):
+          // Kênh G lớn hơn hẳn R và B, đồng thời G phải đủ sáng
+          if (g > 80 && g > r * 1.35 && g > b * 1.25) {
+            sumX += x;
+            sumY += y;
+            count++;
+          }
         }
-    </script>
+      }
 
+      // 3. Nếu phát hiện đủ lượng điểm ảnh màu xanh (tránh nhiễu)
+      if (count > 40) {
+        // Tọa độ trung tâm (Centroid) của vùng màu xanh
+        const centerX = sumX / count;
+        const centerY = sumY / count;
+
+        // Vẽ hình tròn màu đỏ ở giữa vùng màu xanh
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 22, 0, 2 * Math.PI, false);
+        ctx.fillStyle = '#ff0033';
+        ctx.fill();
+
+        // Viền trắng cho hình tròn đỏ nổi bật
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+      }
+
+      // Lặp lại xử lý ở khung hình tiếp theo
+      requestAnimationFrame(processFrame);
+    }
+
+    // Chạy camera khi trang web tải xong
+    window.addEventListener('load', startCamera);
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<script>
-  AFRAME.registerComponent('mirror-x', {
-    init: function () {
-      // Nhân bản entity hiện tại
-      let clone = this.el.cloneNode(true);
-      
-      // Đảo ngược vị trí theo trục X
-      let pos = this.el.getAttribute('position');
-      clone.setAttribute('position', { x: -pos.x, y: pos.y, z: pos.z });
-      
-      // Đảo ngược xoay theo trục Y/Z để đối xứng hoàn toàn
-      let rot = this.el.getAttribute('rotation');
-      clone.setAttribute('rotation', { x: rot.x, y: -rot.y, z: -rot.z });
-
-      // Đưa vật thể nhân bản vào scene
-      this.el.sceneEl.appendChild(clone);
-    }
-  });
-</script>
-
-<!-- Áp dụng vào vật thể ở một bên (VD: bên trái x = -2) -->
-<a-box position="-2 1.5 -3" color="#4CC3D9" mirror-x></a-box>
